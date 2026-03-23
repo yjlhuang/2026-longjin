@@ -2,906 +2,979 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>501 戰略指揮部</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>迎戰學測2027</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Mono:wght@400;700&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-/* ════════════════════════════════════════
-   TOKENS
-════════════════════════════════════════ */
+/* ── DESIGN TOKENS ─────────────────────────────────────────── */
 :root {
-  --bg:       #09090c;
-  --bg2:      #0f0f14;
-  --surface:  #14141b;
-  --card:     #1a1a24;
-  --border:   #252535;
-  --border2:  #1e1e2a;
-
-  --text:     #dde0f0;
-  --muted:    #5a5d75;
-  --muted2:   #3a3d52;
-
-  --green:    #22c55e;
-  --green-dim:#0d2b1a;
-  --green-b:  #1a4a2a;
-
-  --blue:     #6b9fff;
-  --blue-dim: #0d1a2e;
-
-  --purple:   #a07aff;
-  --purple-dim:#1a1030;
-
-  --amber:    #f0a84a;
-  --amber-dim:#2a1a08;
-
-  --red:      #ef4444;
-  --red-dim:  #2a0a0a;
-
-  --cyan:     #22d3ee;
-
-  --font-mono: 'Space Mono', monospace;
-  --font-body: 'Noto Sans TC', sans-serif;
-  --font-serif:'Noto Serif TC', serif;
-
-  --r-card: 14px;
-  --r-sm:   8px;
-
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --bg:        #0b0d16;
+  --surface:   #131620;
+  --surface2:  #1a1e2e;
+  --surface3:  #212638;
+  --border:    #252a3d;
+  --border2:   #2e3450;
+  --text:      #e2e8ff;
+  --muted:     #6b75a0;
+  --muted2:    #4a5278;
+  --accent:    #7c84f8;
+  --accent2:   #5b63e8;
+  --green:     #34d399;
+  --yellow:    #fbbf24;
+  --orange:    #f97316;
+  --red:       #f87171;
+  --blue:      #38bdf8;
+  --purple:    #c084fc;
+  --green-dim:  rgba(52,211,153,.10);
+  --yellow-dim: rgba(251,191,36,.10);
+  --red-dim:    rgba(248,113,113,.10);
+  --blue-dim:   rgba(56,189,248,.10);
+  --accent-dim: rgba(124,132,248,.10);
+  --mono: 'Space Mono', monospace;
+  --sans: 'Noto Sans TC', system-ui, sans-serif;
 }
-
-/* ════════════════════════════════════════
-   RESET + BASE
-════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { scroll-behavior:smooth; }
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-body);
+  font-family: var(--sans);
+  font-size: 13px;
   min-height: 100vh;
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* scanline overlay */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent, transparent 2px,
-    rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
-  );
-}
-
-/* ════════════════════════════════════════
-   SCREENS
-════════════════════════════════════════ */
-.screen { display: none; }
-.screen.active { display: block; }
-
-/* ════════════════════════════════════════
-   GLOBAL LOCK SCREEN
-════════════════════════════════════════ */
-#lockScreen {
-  min-height: 100vh;
+/* ── LOADING SCREEN ────────────────────────────────────────── */
+#loader {
+  position: fixed; inset: 0;
+  background: var(--bg);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  padding: 24px;
+  gap: 20px; z-index: 999;
+  transition: opacity .4s ease;
 }
-.lock-logo {
-  font-family: var(--font-mono);
-  font-size: 11px; letter-spacing: 5px;
-  color: var(--muted); text-transform: uppercase;
-  margin-bottom: 32px;
+#loader.fade { opacity: 0; pointer-events: none; }
+.loader-ring {
+  width: 44px; height: 44px;
+  border: 3px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
 }
-.lock-icon { font-size: 48px; margin-bottom: 20px; }
-.lock-title {
-  font-family: var(--font-serif);
-  font-size: clamp(22px, 5vw, 32px);
-  font-weight: 700; color: var(--text);
-  letter-spacing: 2px; margin-bottom: 8px; text-align: center;
+.loader-text { font-size: 12px; color: var(--muted); font-family: var(--mono); letter-spacing: 1px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── TOPBAR ────────────────────────────────────────────────── */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: stretch;
 }
-.lock-sub {
-  font-size: 12px; color: var(--muted);
-  margin-bottom: 32px; letter-spacing: 1px; text-align: center;
+.topbar-brand {
+  padding: 0 20px;
+  display: flex; align-items: center; gap: 10px;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
 }
-.lock-box {
-  width: 100%; max-width: 360px;
+.brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.brand-name { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.tab-bar { display: flex; overflow-x: auto; flex: 1; }
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 14px 20px;
+  cursor: pointer;
+  font-size: 12px; font-weight: 600;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: color .2s, border-color .2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-icon { font-size: 14px; }
+
+/* ── LAYOUT ────────────────────────────────────────────────── */
+.tab-panel { display: none; padding: 20px; max-width: 860px; margin: 0 auto; }
+.tab-panel.active { display: block; }
+
+/* ── CARDS ─────────────────────────────────────────────────── */
+.card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  padding: 28px 24px;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 14px;
 }
-.lock-label {
-  font-family: var(--font-mono);
-  font-size: 10px; letter-spacing: 2px;
-  color: var(--muted); margin-bottom: 12px;
+.card-title {
+  font-size: 10px; font-weight: 700;
+  color: var(--muted); letter-spacing: 1.5px;
+  text-transform: uppercase; margin-bottom: 14px;
+}
+.section-hd {
+  font-size: 10px; font-weight: 700;
+  color: var(--accent); letter-spacing: 2px;
   text-transform: uppercase;
-}
-.lock-input {
-  width: 100%;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 20px; letter-spacing: 4px;
-  padding: 14px 16px;
-  border-radius: var(--r-sm);
-  outline: none;
-  text-align: center;
-  transition: border-color 0.2s;
-}
-.lock-input:focus { border-color: var(--purple); }
-.lock-input.error { border-color: var(--red); animation: shake 0.3s; }
-.lock-btn {
-  width: 100%; margin-top: 14px;
-  padding: 14px;
-  background: var(--purple);
-  color: #fff;
-  font-family: var(--font-mono);
-  font-size: 13px; font-weight: 700;
-  letter-spacing: 2px;
-  border: none; border-radius: var(--r-sm);
-  cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
-}
-.lock-btn:hover { opacity: 0.88; }
-.lock-btn:active { transform: scale(0.98); }
-.lock-err {
-  margin-top: 10px; font-size: 12px;
-  color: var(--red); text-align: center;
-  min-height: 18px;
-}
-
-@keyframes shake {
-  0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
-}
-
-/* ════════════════════════════════════════
-   MAIN SCREEN
-════════════════════════════════════════ */
-#mainScreen { position: relative; z-index: 1; }
-
-/* ── Header ── */
-.site-header {
-  padding: 28px 20px 20px;
-  max-width: 900px; margin: 0 auto;
-  position: relative;
-}
-.site-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 10px; letter-spacing: 4px;
-  color: var(--muted); text-transform: uppercase;
-  margin-bottom: 8px;
-}
-.site-title {
-  font-family: var(--font-serif);
-  font-size: clamp(22px, 5vw, 36px);
-  font-weight: 700; color: var(--text);
-  letter-spacing: 2px;
-  line-height: 1.1;
-}
-.site-title span { color: var(--purple); }
-.site-meta {
-  margin-top: 6px;
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted);
-  letter-spacing: 1px;
-}
-.header-auth-badge {
-  position: absolute; top: 28px; right: 20px;
+  margin: 22px 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
   display: flex; align-items: center; gap: 8px;
 }
-.auth-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--muted2);
-  box-shadow: 0 0 6px var(--muted2);
-}
-.auth-dot.unlocked { background: var(--green); box-shadow: 0 0 8px var(--green); }
-.auth-dot.admin    { background: var(--amber);  box-shadow: 0 0 8px var(--amber); }
-.auth-label {
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted); letter-spacing: 1px;
-}
-.logout-btn {
-  font-family: var(--font-mono); font-size: 10px;
-  color: var(--muted); background: none;
+.section-hd::before { content:''; width:3px; height:12px; background:var(--accent); border-radius:2px; }
+
+/* ── SELECTS & BUTTONS ─────────────────────────────────────── */
+select, button { font-family: var(--sans); font-size: 13px; }
+select {
+  background: var(--surface2);
   border: 1px solid var(--border2);
-  padding: 4px 10px; border-radius: 4px;
-  cursor: pointer; letter-spacing: 1px;
-  transition: all 0.2s;
-}
-.logout-btn:hover { color: var(--red); border-color: var(--red); }
-
-/* ── Announcement ── */
-.announcement-bar {
-  max-width: 900px; margin: 0 auto 20px;
-  padding: 0 20px;
-}
-.announcement {
-  background: linear-gradient(135deg, var(--amber-dim), rgba(42,26,8,0.5));
-  border: 1px solid rgba(240,168,74,0.3);
-  border-left: 3px solid var(--amber);
-  border-radius: var(--r-sm);
-  padding: 12px 16px;
-  font-size: 13px; color: var(--amber);
-  line-height: 1.6;
-}
-.announcement-date {
-  float: right;
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted);
-  margin-left: 12px;
-}
-
-/* ── Category sections ── */
-.categories-wrap {
-  max-width: 900px; margin: 0 auto;
-  padding: 0 20px 60px;
-}
-.category-section { margin-bottom: 36px; }
-.category-header {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 16px; padding-bottom: 10px;
-  border-bottom: 1px solid var(--border2);
-}
-.cat-icon { font-size: 18px; }
-.cat-title {
-  font-family: var(--font-mono);
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 2px; text-transform: uppercase;
-}
-.cat-title-zh {
-  font-family: var(--font-body);
-  font-size: 14px; font-weight: 700;
   color: var(--text);
+  border-radius: 10px;
+  padding: 9px 14px;
+  width: 100%; cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b75a0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  transition: border-color .2s;
 }
-.cat-count {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  padding: 2px 8px; border-radius: 10px;
-}
+select:focus { outline: none; border-color: var(--accent); }
 
-/* ── Cards grid ── */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
-}
-.artifact-card {
-  background: var(--card);
+/* ── STAT PILLS ────────────────────────────────────────────── */
+.stat-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.stat-pill {
+  background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  padding: 18px 16px 16px;
-  position: relative; overflow: hidden;
-  cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
-  text-decoration: none; color: inherit;
-  display: block;
+  border-radius: 12px;
+  padding: 10px 16px;
+  flex: 1; min-width: 80px; text-align: center;
 }
-.artifact-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+.stat-pill .val {
+  font-size: 24px; font-weight: 900;
+  font-family: var(--mono); line-height: 1.1;
 }
-.artifact-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-}
-.artifact-card:hover::before { opacity: 1; }
+.stat-pill .lbl { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: .5px; }
+.c-green .val  { color: var(--green); }
+.c-yellow .val { color: var(--yellow); }
+.c-red .val    { color: var(--red); }
+.c-blue .val   { color: var(--blue); }
+.c-accent .val { color: var(--accent); }
+.c-purple .val { color: var(--purple); }
 
-/* card colour accents per category */
-.artifact-card[data-cat="vocab"]::before    { background: linear-gradient(90deg, transparent, #22c55e, transparent); }
-.artifact-card[data-cat="strategy"]::before { background: linear-gradient(90deg, transparent, #6b9fff, transparent); }
-.artifact-card[data-cat="command"]::before  { background: linear-gradient(90deg, transparent, #a07aff, transparent); }
+/* ── SUBJECT BARS ──────────────────────────────────────────── */
+.subj-list { display: flex; flex-direction: column; gap: 8px; }
+.subj-row { display: flex; align-items: center; gap: 10px; }
+.subj-label { width: 48px; font-size: 11px; color: var(--muted); flex-shrink: 0; font-family: var(--mono); }
+.bar-track {
+  flex: 1; height: 7px;
+  background: var(--border); border-radius: 4px;
+  overflow: visible; position: relative;
+}
+.bar-fill { height: 100%; border-radius: 4px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+.bar-avg-tick {
+  position: absolute; top: -3px;
+  width: 2px; height: 13px;
+  background: var(--muted2);
+  border-radius: 1px;
+}
+.subj-val {
+  width: 34px; text-align: right;
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  flex-shrink: 0;
+}
+.subj-diff { width: 40px; text-align: right; font-size: 11px; flex-shrink: 0; font-family: var(--mono); }
+.diff-pos { color: var(--green); }
+.diff-neg { color: var(--red); }
+.diff-neu { color: var(--muted); }
+.bar-hint { font-size: 10px; color: var(--muted2); margin-top: 8px; display: flex; align-items: center; gap: 4px; }
+.bar-hint::before { content:''; width:10px; height:2px; background:var(--muted2); border-radius:1px; }
 
-.artifact-card[data-cat="vocab"]:hover    { border-color: rgba(34,197,94,0.4); }
-.artifact-card[data-cat="strategy"]:hover { border-color: rgba(107,159,255,0.4); }
-.artifact-card[data-cat="command"]:hover  { border-color: rgba(160,122,255,0.4); }
+/* ── RANK BADGES ───────────────────────────────────────────── */
+.rank-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 700;
+  font-family: var(--mono);
+}
+.rank-top    { background: var(--green-dim);  color: var(--green); }
+.rank-mid    { background: var(--yellow-dim); color: var(--yellow); }
+.rank-low    { background: var(--red-dim);    color: var(--red); }
+.rank-na     { color: var(--muted2); }
 
-.card-icon { font-size: 22px; margin-bottom: 10px; }
-.card-title {
-  font-size: 14px; font-weight: 700;
-  color: var(--text); margin-bottom: 6px;
-  line-height: 1.3;
-}
-.card-desc {
-  font-size: 11px; color: var(--muted);
-  line-height: 1.6; margin-bottom: 12px;
-}
-.card-footer {
-  display: flex; align-items: center; gap: 6px;
-  flex-wrap: wrap;
-}
-.diff-badge {
-  font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: 1px;
-  padding: 2px 7px; border-radius: 4px;
-  border: 1px solid;
-}
-.diff-badge.Beginner      { color: var(--green); border-color: var(--green-b); background: var(--green-dim); }
-.diff-badge.Intermediate  { color: var(--blue);  border-color: rgba(107,159,255,0.3); background: var(--blue-dim); }
-.diff-badge.Advanced      { color: var(--purple);border-color: rgba(160,122,255,0.3); background: var(--purple-dim); }
-
-.external-badge {
-  font-family: var(--font-mono);
-  font-size: 9px; color: var(--cyan);
-  border: 1px solid rgba(34,211,238,0.3);
-  background: rgba(34,211,238,0.08);
-  padding: 2px 7px; border-radius: 4px;
-  letter-spacing: 1px;
-}
-.skill-tag {
-  font-size: 9px; color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  padding: 2px 6px; border-radius: 4px;
-}
-
-/* private locked card state */
-.artifact-card.is-locked {
-  cursor: default;
-  opacity: 0.6;
-  pointer-events: none;
-}
-.artifact-card.is-locked-unlockable {
-  cursor: pointer;
-  opacity: 0.75;
-}
-.lock-overlay {
-  position: absolute; inset: 0;
-  background: rgba(9,9,12,0.7);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 6px; border-radius: var(--r-card);
-  backdrop-filter: blur(2px);
-}
-.lock-overlay-icon { font-size: 28px; }
-.lock-overlay-text {
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted);
-  letter-spacing: 2px;
-}
-
-/* ── Individual lock modal ── */
-.modal-backdrop {
-  display: none;
-  position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(4px);
-  align-items: center; justify-content: center;
-  padding: 20px;
-}
-.modal-backdrop.open { display: flex; }
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  padding: 28px 24px;
-  width: 100%; max-width: 340px;
-  box-shadow: var(--shadow);
-}
-.modal-title {
-  font-family: var(--font-mono);
-  font-size: 11px; letter-spacing: 3px;
-  color: var(--purple); text-transform: uppercase;
-  margin-bottom: 16px;
-}
-.modal-desc {
-  font-size: 13px; color: var(--muted);
-  margin-bottom: 20px; line-height: 1.6;
-}
-.modal input {
-  width: 100%; background: var(--bg2);
-  border: 1px solid var(--border); color: var(--text);
-  font-family: var(--font-mono); font-size: 22px;
-  letter-spacing: 8px; padding: 14px; border-radius: var(--r-sm);
-  outline: none; text-align: center;
-  transition: border-color 0.2s;
-}
-.modal input:focus { border-color: var(--purple); }
-.modal input.error { border-color: var(--red); animation: shake 0.3s; }
-.modal-actions { display: flex; gap: 10px; margin-top: 14px; }
-.modal-btn {
-  flex: 1; padding: 12px;
-  font-family: var(--font-mono); font-size: 12px;
-  letter-spacing: 1px; border-radius: var(--r-sm);
-  cursor: pointer; border: none;
-  transition: opacity 0.2s;
-}
-.modal-btn.primary { background: var(--purple); color: #fff; }
-.modal-btn.secondary { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
-.modal-btn:hover { opacity: 0.85; }
-.modal-err { margin-top: 8px; font-size: 11px; color: var(--red); min-height: 16px; }
-
-/* ── Footer ── */
-.site-footer {
-  max-width: 900px; margin: 0 auto;
-  padding: 24px 20px;
-  border-top: 1px solid var(--border2);
-  text-align: center;
-}
-.footer-copy {
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted2);
-  letter-spacing: 0.5px; line-height: 1.8;
-}
-
-/* ── Priority badge ── */
-.priority-badge {
-  position: absolute; top: 12px; right: 12px;
-  font-size: 9px; font-family: var(--font-mono);
-  letter-spacing: 0.5px; font-weight: 700;
-  color: #fff;
-  background: linear-gradient(135deg, #f97316, #ef4444);
-  padding: 3px 8px; border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(239,68,68,0.4);
-  white-space: nowrap;
-  animation: pulseGlow 2.5s ease-in-out infinite;
-}
-@keyframes pulseGlow {
-  0%,100% { box-shadow: 0 2px 8px rgba(239,68,68,0.4); }
-  50%      { box-shadow: 0 2px 16px rgba(249,115,22,0.7); }
-}
-
-/* ── Time badge ── */
-.time-badge {
-  font-family: var(--font-mono);
-  font-size: 9px; color: var(--muted);
-  margin-left: auto;
+/* ── TABLES ────────────────────────────────────────────────── */
+.data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.data-table th {
+  text-align: left; padding: 7px 10px;
+  color: var(--muted); font-weight: 600;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .8px;
+  border-bottom: 1px solid var(--border2);
   white-space: nowrap;
 }
-#loadingScreen {
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 16px;
+.data-table td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,.03); }
+.data-table tr:hover td { background: var(--surface2); }
+.data-table tr.sem-sep td {
+  background: var(--surface2) !important;
+  color: var(--accent); font-size: 10px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 5px 10px;
 }
-.loader-ring {
-  width: 40px; height: 40px;
-  border: 2px solid var(--border);
-  border-top-color: var(--purple);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.loader-text {
-  font-family: var(--font-mono);
-  font-size: 11px; color: var(--muted);
-  letter-spacing: 3px;
-}
+.period-tag { font-size: 10px; font-weight: 700; color: var(--muted); font-family: var(--mono); }
 
-/* ── Responsive ── */
-@media (max-width: 480px) {
-  .cards-grid { grid-template-columns: 1fr; }
-  .header-auth-badge { position: static; margin-top: 12px; }
+/* ── NOTICE ────────────────────────────────────────────────── */
+.notice {
+  background: var(--surface2);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  padding: 10px 14px;
+  font-size: 12px; color: var(--muted);
+  line-height: 1.6; margin-bottom: 14px;
 }
+.notice strong { color: var(--text); }
 
-/* ── Fade in ── */
-.fade-in {
-  animation: fadeIn 0.4s ease both;
+/* ── LEGEND ────────────────────────────────────────────────── */
+.legend-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.legend-dash { width: 14px; height: 2px; border-radius: 1px; flex-shrink: 0; border-top: 2px dashed; }
+
+/* ── CHART WRAPPER ─────────────────────────────────────────── */
+.chart-wrap { position: relative; }
+canvas { max-width: 100%; }
+
+/* ── OVERVIEW GRID ─────────────────────────────────────────── */
+.overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.ov-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px;
+  cursor: pointer; transition: border-color .2s, background .2s;
 }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.fade-in-delay-1 { animation-delay: 0.05s; }
-.fade-in-delay-2 { animation-delay: 0.10s; }
-.fade-in-delay-3 { animation-delay: 0.15s; }
-.fade-in-delay-4 { animation-delay: 0.20s; }
+.ov-card:hover { border-color: var(--accent); background: var(--accent-dim); }
+.ov-card .ov-name { font-weight: 700; margin-bottom: 5px; }
+.ov-card .ov-meta { font-size: 11px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── ERROR STATE ───────────────────────────────────────────── */
+.err-card {
+  background: var(--red-dim); border: 1px solid var(--red);
+  border-radius: 12px; padding: 16px; color: var(--red);
+  font-size: 13px; line-height: 1.6;
+}
 </style>
 </head>
 <body>
 
-<!-- ════ LOADING ════ -->
-<div id="loadingScreen" class="screen active">
+<!-- LOADING -->
+<div id="loader">
   <div class="loader-ring"></div>
-  <div class="loader-text">INITIALIZING...</div>
+  <div class="loader-text">載入成績資料中…</div>
 </div>
 
-<!-- ════ GLOBAL LOCK ════ -->
-<div id="lockScreen" class="screen">
-  <div class="lock-logo">501 · LEARNING OS</div>
-  <div class="lock-icon">🔒</div>
-  <div class="lock-title" id="lockTitle">501 戰略指揮部</div>
-  <div class="lock-sub">ACCESS RESTRICTED — ENTER PASSPHRASE</div>
-  <div class="lock-box">
-    <div class="lock-label">系統密鑰 / MASTER KEY</div>
-    <input class="lock-input" id="globalPassInput" type="password"
-           maxlength="32" autocomplete="off" placeholder="••••••••"
-           autofocus>
-    <button class="lock-btn" onclick="verifyGlobalLock()">解鎖 UNLOCK</button>
-    <div class="lock-err" id="globalLockErr"></div>
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-dot"></div>
+    <span class="brand-name">501班</span>
+  </div>
+  <div class="tab-bar">
+    <div class="tab active" onclick="switchTab('student')"><span class="tab-icon">🎓</span>學生視角</div>
+    <div class="tab" onclick="switchTab('teacher')"><span class="tab-icon">👩‍🏫</span>導師視角</div>
+    <div class="tab" onclick="switchTab('english')"><span class="tab-icon">📖</span>英文單科</div>
   </div>
 </div>
 
-<!-- ════ MAIN ════ -->
-<div id="mainScreen" class="screen">
-  <header class="site-header fade-in">
-    <div class="site-eyebrow" id="siteEyebrow">LEARNING OS v2.0</div>
-    <div class="site-title"><span id="siteTitleSpan">501</span> 戰略指揮部</div>
-    <div class="site-meta" id="siteMeta"></div>
-    <div class="header-auth-badge" id="authBadge" style="display:none">
-      <div class="auth-dot" id="authDot"></div>
-      <div class="auth-label" id="authLabel">GUEST</div>
-      <button class="logout-btn" onclick="logout()">登出</button>
-    </div>
-  </header>
-
-  <div class="announcement-bar">
-    <div class="announcement" id="announcement"></div>
+<!-- STUDENT TAB -->
+<div id="tab-student" class="tab-panel active">
+  <div class="card">
+    <div class="card-title">選擇學生</div>
+    <select id="stu-select" onchange="renderStudent()">
+      <option value="">— 請選擇 —</option>
+    </select>
   </div>
-
-  <main class="categories-wrap" id="categoriesWrap"></main>
-
-  <footer class="site-footer">
-    <div class="footer-copy" id="footerCopy"></div>
-  </footer>
+  <div id="stu-content"></div>
 </div>
 
-<!-- ════ INDIVIDUAL LOCK MODAL ════ -->
-<div class="modal-backdrop" id="modalBackdrop" onclick="closeModalIfOutside(event)">
-  <div class="modal">
-    <div class="modal-title">🔐 身分驗證</div>
-    <div class="modal-desc">請輸入您的<strong style="color:var(--text)">身分證後三碼</strong>以解鎖個人資料</div>
-    <input id="idInput" type="number" maxlength="3" max="999" min="0"
-           placeholder="000" autocomplete="off"
-           oninput="limitThree(this)"
-           onkeydown="if(event.key==='Enter') verifyIndividual()">
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="closeModal()">取消</button>
-      <button class="modal-btn primary" onclick="verifyIndividual()">驗證</button>
-    </div>
-    <div class="modal-err" id="modalErr"></div>
+<!-- TEACHER TAB -->
+<div id="tab-teacher" class="tab-panel">
+  <div class="notice"><strong>導師模式</strong>：顯示完整資料含班排／年排。高一班排為原班，高二重新編班後為 501 班排。</div>
+  <div class="card">
+    <div class="card-title">選擇學生</div>
+    <select id="tch-select" onchange="renderTeacher()">
+      <option value="">— 全班概覽 —</option>
+    </select>
   </div>
+  <div id="tch-content"></div>
 </div>
 
-<!-- ════ SCRIPT ════ -->
+<!-- ENGLISH TAB -->
+<div id="tab-english" class="tab-panel">
+  <div id="eng-content"></div>
+</div>
+
 <script>
-// ─────────────────────────────────────
-//  STATE
-// ─────────────────────────────────────
-let NAV = null;
-let AUTH = {
-  state: 'guest',   // 'guest' | 'individual' | 'admin'
-  idHash: null
+// ═══════════════════════════════════════════════════════════
+//  CONFIG — only edit this section to add new exam periods
+// ═══════════════════════════════════════════════════════════
+const EXAM_IDS = [
+  '010100','010101','010102','010103','010104',
+  '010200','010201','010202','010203','010204',
+  '020100','020101','020102','020103','020104',
+  // 新增考試：在此加上 exam_id，例如 '020201'
+];
+
+const DATA_BASE = 'data/';  // 相對路徑，與 index.html 同層
+
+// ═══════════════════════════════════════════════════════════
+//  RUNTIME STATE
+// ═══════════════════════════════════════════════════════════
+let DB = {
+  students: [],   // [{id, name}]
+  exams: {},      // exam_id → exam payload
+  byStudent: {},  // student_id → [{period, semester, exam, private, 班排, 年排, 學科平均, scores{}}]
+  classAvg: {},   // exam_id → {subj: avg, ...}
 };
 
-// ─────────────────────────────────────
-//  BOOT
-// ─────────────────────────────────────
-window.addEventListener('DOMContentLoaded', async () => {
-  // Restore session
-  const saved = sessionStorage.getItem('auth501');
-  if (saved) {
-    try { AUTH = JSON.parse(saved); } catch(e) {}
-  }
-
+// ═══════════════════════════════════════════════════════════
+//  DATA LOADING
+// ═══════════════════════════════════════════════════════════
+async function loadAll() {
   try {
-    const res = await fetch('nav.json?v=' + Date.now());
-    if (!res.ok) throw new Error('nav.json not found');
-    NAV = await res.json();
-  } catch(e) {
-    showError('無法載入 nav.json，請確認檔案已上傳。');
-    return;
+    // 1. students manifest
+    const stuRes = await fetch(DATA_BASE + 'students.json');
+    if (!stuRes.ok) throw new Error('students.json 載入失敗');
+    const stuData = await stuRes.json();
+    DB.students = stuData.students;
+
+    // 2. exam files (parallel)
+    const examResults = await Promise.allSettled(
+      EXAM_IDS.map(id =>
+        fetch(`${DATA_BASE}exams/${id}.json`)
+          .then(r => { if (!r.ok) throw new Error(id); return r.json(); })
+      )
+    );
+
+    examResults.forEach((result, i) => {
+      const id = EXAM_IDS[i];
+      if (result.status === 'fulfilled') {
+        DB.exams[id] = result.value;
+        DB.classAvg[id] = result.value.class_avg || {};
+      } else {
+        console.warn(`Exam ${id} not found, skipping`);
+      }
+    });
+
+    // 3. Build per-student record index
+    DB.students.forEach(s => { DB.byStudent[s.id] = []; });
+
+    Object.values(DB.exams).forEach(exam => {
+      exam.students.forEach(row => {
+        if (!DB.byStudent[row.id]) return;
+        DB.byStudent[row.id].push({
+          period:    exam.exam_id,
+          semester:  exam.semester,
+          exam:      exam.exam,
+          private:   exam.private,
+          '班排':    row['班排'],
+          '年排':    row['年排'],
+          '學科平均': row['學科平均'],
+          ...row.scores,
+        });
+      });
+    });
+
+    // Sort each student's records by exam_id (chronological)
+    Object.values(DB.byStudent).forEach(recs =>
+      recs.sort((a, b) => a.period.localeCompare(b.period))
+    );
+
+    initUI();
+    hideLoader();
+  } catch (err) {
+    showError(err.message);
   }
+}
 
-  const cfg = NAV.site_config;
-
-  // Update page title
-  document.title = cfg.site_title || '501 戰略指揮部';
-
-  // Global lock check
-  if (cfg.is_global_locked && cfg.master_password_hash) {
-    // Already passed global lock this session?
-    if (!sessionStorage.getItem('globalUnlocked')) {
-      showScreen('lockScreen');
-      document.getElementById('lockTitle').textContent = cfg.site_title;
-      document.getElementById('globalPassInput').focus();
-      return;
-    }
-  }
-
-  renderMain();
-});
-
-// ─────────────────────────────────────
-//  SCREENS
-// ─────────────────────────────────────
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+function hideLoader() {
+  const l = document.getElementById('loader');
+  l.classList.add('fade');
+  setTimeout(() => l.style.display = 'none', 400);
 }
 
 function showError(msg) {
-  document.getElementById('loadingScreen').innerHTML =
-    `<div style="text-align:center;padding:40px 20px">
-       <div style="font-size:32px;margin-bottom:16px">⚠️</div>
-       <div style="font-family:var(--font-mono);font-size:12px;color:var(--red);letter-spacing:2px">${msg}</div>
-     </div>`;
-}
-
-// ─────────────────────────────────────
-//  GLOBAL LOCK
-// ─────────────────────────────────────
-async function verifyGlobalLock() {
-  const input = document.getElementById('globalPassInput');
-  const errEl = document.getElementById('globalLockErr');
-  const val = input.value.trim();
-  if (!val) return;
-
-  const hash = await sha256(val);
-  const cfg = NAV.site_config;
-
-  // Check admin
-  if (cfg.admin_hash && hash === cfg.admin_hash) {
-    AUTH = { state: 'admin', idHash: null };
-    saveAuth();
-    sessionStorage.setItem('globalUnlocked', '1');
-    renderMain();
-    return;
-  }
-
-  if (hash === cfg.master_password_hash) {
-    sessionStorage.setItem('globalUnlocked', '1');
-    renderMain();
-    return;
-  }
-
-  input.classList.add('error');
-  setTimeout(() => input.classList.remove('error'), 500);
-  errEl.textContent = '密鑰錯誤，請再試一次';
-}
-
-document.getElementById('globalPassInput')?.addEventListener('keydown', e => {
-  if (e.key === 'Enter') verifyGlobalLock();
-});
-
-// ─────────────────────────────────────
-//  RENDER MAIN
-// ─────────────────────────────────────
-function renderMain() {
-  showScreen('mainScreen');
-  const cfg = NAV.site_config;
-
-  // Header
-  document.getElementById('siteEyebrow').textContent = cfg.site_subtitle || 'LEARNING OS';
-  document.getElementById('siteTitleSpan').textContent = cfg.site_title?.split(' ')[0] || '501';
-  document.getElementById('siteMeta').textContent =
-    `LAST UPDATE: ${cfg.last_update || '—'}`;
-
-  // Auth badge
-  updateAuthBadge();
-
-  // Announcement
-  const annEl = document.getElementById('announcement');
-  if (cfg.announcement) {
-    const dateStr = cfg.last_update ? `<span class="announcement-date">${cfg.last_update}</span>` : '';
-    annEl.innerHTML = dateStr + cfg.announcement;
-    annEl.parentElement.style.display = '';
-  } else {
-    annEl.parentElement.style.display = 'none';
-  }
-
-  // Footer
-  document.getElementById('footerCopy').innerHTML =
-    (cfg.footer_copyright || '') + '<br>本系統之數據邏輯、分析架構及教案資源受著作權法保護。未經授權之複製、修改或轉載，將依法追究法律責任。';
-
-  // Categories + cards
-  const wrap = document.getElementById('categoriesWrap');
-  wrap.innerHTML = '';
-
-  NAV.categories.forEach((cat, ci) => {
-    const items = NAV.artifact_registry.filter(a => a.category === cat.id);
-    if (!items.length) return;
-
-    const section = document.createElement('div');
-    section.className = `category-section fade-in fade-in-delay-${Math.min(ci+1,4)}`;
-
-    section.innerHTML = `
-      <div class="category-header">
-        <span class="cat-icon">${cat.icon}</span>
-        <span class="cat-title-zh" style="color:${cat.color}">${cat.label}</span>
-        <span class="cat-title" style="color:${cat.color};opacity:0.5">${cat.label_en}</span>
-        <span class="cat-count">${items.length} 項</span>
+  document.getElementById('loader').innerHTML = `
+    <div style="max-width:360px;padding:20px">
+      <div class="err-card">
+        <strong>載入失敗</strong><br>${msg}<br><br>
+        請確認 <code>data/students.json</code> 和 <code>data/exams/</code> 路徑正確，
+        且透過 HTTP 伺服器開啟（不能直接雙擊 HTML 檔案）。
       </div>
-      <div class="cards-grid" id="grid-${cat.id}"></div>
-    `;
-    wrap.appendChild(section);
+    </div>`;
+}
 
-    const grid = section.querySelector(`#grid-${cat.id}`);
-    items.forEach(item => {
-      grid.appendChild(buildCard(item));
-    });
+// ═══════════════════════════════════════════════════════════
+//  UI INIT
+// ═══════════════════════════════════════════════════════════
+function initUI() {
+  // Sort by seat if available, else by id
+  const sorted = [...DB.students].sort((a, b) => {
+    if (a.seat != null && b.seat != null) return a.seat - b.seat;
+    return a.id.localeCompare(b.id);
+  });
+
+  // Build a seat-sorted index for O(1) lookup
+  DB.studentById = {};
+  sorted.forEach(s => { DB.studentById[s.id] = s; });
+
+  const stuSel = document.getElementById('stu-select');
+  const tchSel = document.getElementById('tch-select');
+  sorted.forEach(s => {
+    const label = s.seat != null
+      ? `${String(s.seat).padStart(2,'0')} · ${s.name}`
+      : s.name;
+    const o = `<option value="${s.id}">${label}</option>`;
+    stuSel.insertAdjacentHTML('beforeend', o);
+    tchSel.insertAdjacentHTML('beforeend', o);
   });
 }
 
-// ─────────────────────────────────────
-//  BUILD CARD
-// ─────────────────────────────────────
-function buildCard(item) {
-  const isPrivate = item.is_private;
-  const isUnlocked = AUTH.state === 'admin' ||
-    (AUTH.state === 'individual' && AUTH.idHash);
+// ═══════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════
+const DISPLAY_PERIODS = EXAM_IDS.filter(id => {
+  const e = DB.exams[id];
+  return e && !e.private && ['第一次','第二次','第三次','學期'].includes(e.exam);
+});
 
-  const card = document.createElement('a');
-  card.className = 'artifact-card';
-  card.dataset.cat = item.category;
-  card.dataset.id  = item.id;
+function displayPeriods() {
+  return EXAM_IDS.filter(id => DB.exams[id] && !DB.exams[id].private);
+}
+function monthlyPeriods() {
+  return EXAM_IDS.filter(id => {
+    const e = DB.exams[id];
+    return e && ['第一次','第二次','第三次'].includes(e.exam);
+  });
+}
+function allPeriods() { return EXAM_IDS.filter(id => DB.exams[id]); }
 
-  const skillTags = (item.target_skills || []).slice(0,2)
-    .map(s => `<span class="skill-tag">${s}</span>`).join('');
+function stuRecs(id, includePrivate = false) {
+  return (DB.byStudent[id] || []).filter(r => includePrivate || !r.private);
+}
 
-  const extBadge = item.is_external
-    ? `<span class="external-badge">↗ 外部</span>` : '';
+function getRec(id, periodCode) {
+  return (DB.byStudent[id] || []).find(r => r.period === periodCode);
+}
 
-  const priorityBadge = item.priority === 1
-    ? `<div class="priority-badge">🔥 建議首選</div>` : '';
+function rankColor(rank_str) {
+  if (!rank_str) return 'rank-na';
+  const [n, tot] = rank_str.split('/').map(Number);
+  const p = n / tot;
+  return p <= .25 ? 'rank-top' : p <= .6 ? 'rank-mid' : 'rank-low';
+}
 
-  const timeBadge = item.estimated_time
-    ? `<span class="time-badge">⏱ ${item.estimated_time}min</span>` : '';
+function scoreColor(v, avg) {
+  if (v == null) return 'var(--muted)';
+  const d = v - (avg || 0);
+  if (d > 8)  return 'var(--green)';
+  if (d > 2)  return '#86efac';
+  if (d > -3) return 'var(--yellow)';
+  if (d > -8) return 'var(--orange)';
+  return 'var(--red)';
+}
 
-  card.innerHTML = `
-    ${priorityBadge}
-    <div class="card-icon">${item.icon || '📄'}</div>
-    <div class="card-title">${item.title}</div>
-    <div class="card-desc">${item.desc}</div>
-    <div class="card-footer">
-      <span class="diff-badge ${item.difficulty}">${item.difficulty}</span>
-      ${extBadge}
-      ${skillTags}
-      ${timeBadge}
-    </div>
-  `;
+function diffTag(v, avg) {
+  if (v == null || avg == null) return '<span class="diff-neu">—</span>';
+  const d = v - avg;
+  const cls = d > 0 ? 'diff-pos' : d < 0 ? 'diff-neg' : 'diff-neu';
+  return `<span class="${cls}">${d > 0 ? '+' : ''}${d.toFixed(1)}</span>`;
+}
 
-  if (isPrivate && !isUnlocked) {
-    // Show lock overlay
-    card.classList.add('artifact-card', 'is-locked-unlockable');
-    card.style.pointerEvents = 'auto';
-    card.style.opacity = '0.7';
-    const overlay = document.createElement('div');
-    overlay.className = 'lock-overlay';
-    overlay.innerHTML = `
-      <div class="lock-overlay-icon">🔐</div>
-      <div class="lock-overlay-text">需要驗證身分</div>
-    `;
-    card.appendChild(overlay);
-    card.addEventListener('click', e => { e.preventDefault(); openModal(); });
-  } else {
-    // Normal link
-    if (item.url && item.url !== '#') {
-      card.href = item.url;
-      if (item.is_external) card.target = '_blank';
-    } else {
-      card.style.cursor = 'default';
+const CORE_SUBJS = {
+  '高一上': ['國文','英文','數學','歷史','地理','公民','物理','化學','生物','地科'],
+  '高一下': ['國文','英文','數學','歷史','地理','公民','物理','化學','生物','地科'],
+  '高二上': ['國文','英文','數學B','數學A','歷史','公民','物理探A'],
+};
+
+function subjsForPeriod(periodCode) {
+  const sem = DB.exams[periodCode]?.semester || '';
+  return (CORE_SUBJS[sem] || []);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHART REGISTRY
+// ═══════════════════════════════════════════════════════════
+const charts = {};
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function makeChart(id, cfg) {
+  destroyChart(id);
+  charts[id] = new Chart(document.getElementById(id).getContext('2d'), cfg);
+}
+
+function chartOpts(yMin, yMax, extraScales = {}) {
+  return {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', labels: { color: '#6b75a0', boxWidth: 9, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: '#1a1e2e', borderColor: '#252a3d', borderWidth: 1,
+        titleColor: '#e2e8ff', bodyColor: '#6b75a0', padding: 10,
+      },
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,.03)' }, ticks: { color: '#6b75a0', font: { size: 10 }, maxRotation: 0 } },
+      y: { min: yMin, max: yMax, grid: { color: 'rgba(255,255,255,.03)' }, ticks: { color: '#6b75a0' }, ...extraScales },
+    },
+  };
+}
+
+const PALETTE = ['#7c84f8','#34d399','#f97316','#f87171','#38bdf8','#fbbf24','#c084fc','#4ade80','#fb7185','#67e8f9'];
+
+// ═══════════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', ['student','teacher','english'][i] === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'english' && !document.getElementById('eng-content').innerHTML) renderEnglish();
+  if (name === 'teacher' && !document.getElementById('tch-content').innerHTML) renderTeacherOverview();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STUDENT VIEW
+// ═══════════════════════════════════════════════════════════
+function renderStudent() {
+  const id = document.getElementById('stu-select').value;
+  const el = document.getElementById('stu-content');
+  if (!id) { el.innerHTML = ''; return; }
+
+  const recs = stuRecs(id);
+  const monthly = recs.filter(r => ['第一次','第二次','第三次'].includes(r.exam));
+  const latest  = monthly.length ? monthly[monthly.length - 1] : null;
+
+  const latestSem  = latest ? DB.exams[latest.period]?.semester : '';
+  const subjs      = latest ? subjsForPeriod(latest.period).filter(k => latest[k] != null) : [];
+  const clsAvg     = latest ? (DB.classAvg[latest.period] || {}) : {};
+
+  // best / worst subject vs class avg
+  let best = null, worst = null;
+  subjs.forEach(k => {
+    const diff = (latest[k] || 0) - (clsAvg[k] || 0);
+    if (best  == null || diff > (latest[best]  - (clsAvg[best]  || 0))) best  = k;
+    if (worst == null || diff < (latest[worst] - (clsAvg[worst] || 0))) worst = k;
+  });
+
+  const periods   = displayPeriods();
+  const labels    = periods.map(p => { const e = DB.exams[p]; return (e.semester.slice(1) + '\n' + e.exam); });
+  const avgTrend  = periods.map(p => getRec(id, p)?.['學科平均'] ?? null);
+  const clsATrend = periods.map(p => DB.classAvg[p]?.['學科平均'] ?? null);
+  const engTrend  = periods.map(p => getRec(id, p)?.['英文'] ?? null);
+  const engAvg    = periods.map(p => DB.classAvg[p]?.['英文'] ?? null);
+
+  const name = DB.studentById?.[id]?.name || id;
+
+  el.innerHTML = `
+<div class="section-hd">最新成績 · ${latestSem} ${latest?.exam || ''}</div>
+
+<div class="stat-row">
+  <div class="stat-pill c-accent">
+    <div class="val">${latest?.['學科平均']?.toFixed(1) || '—'}</div>
+    <div class="lbl">學科平均</div>
+  </div>
+  ${best ? `<div class="stat-pill c-green">
+    <div class="val">${latest[best]}</div>
+    <div class="lbl">強科 ${best}</div>
+  </div>` : ''}
+  ${worst && worst !== best ? `<div class="stat-pill c-red">
+    <div class="val">${latest[worst]}</div>
+    <div class="lbl">弱科 ${worst}</div>
+  </div>` : ''}
+</div>
+
+<div class="card">
+  <div class="card-title">各科成績 vs 班平均（${latestSem} ${latest?.exam || ''}）</div>
+  <div class="subj-list">
+    ${subjs.map(k => {
+      const v = latest[k], a = clsAvg[k] || 0;
+      const col = scoreColor(v, a);
+      return `<div class="subj-row">
+        <span class="subj-label">${k}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${Math.min(v,100)}%;background:${col}"></div>
+          <div class="bar-avg-tick" style="left:${Math.min(a,100)}%"></div>
+        </div>
+        <span class="subj-val" style="color:${col}">${v}</span>
+        ${diffTag(v, a)}
+      </div>`;
+    }).join('')}
+  </div>
+  <div class="bar-hint">灰線 = 班平均，右側數字為與班平均差值</div>
+</div>
+
+<div class="card">
+  <div class="card-title">學科平均走勢（月考＋學期）</div>
+  <div class="legend-row">
+    <div class="legend-item"><div class="legend-dot" style="background:#7c84f8"></div>${name}</div>
+    <div class="legend-item"><div class="legend-dash" style="border-color:#3a4060"></div>班平均</div>
+  </div>
+  <div class="chart-wrap"><canvas id="stu-avg-chart" height="190"></canvas></div>
+</div>
+
+<div class="card">
+  <div class="card-title">英文走勢（月考＋學期）</div>
+  <div class="chart-wrap"><canvas id="stu-eng-chart" height="160"></canvas></div>
+</div>
+
+<div class="card">
+  <div class="card-title">歷次月考明細</div>
+  ${renderTrendTable(id, false)}
+</div>`;
+
+  makeChart('stu-avg-chart', {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: name, data: avgTrend, borderColor: '#7c84f8', backgroundColor: 'rgba(124,132,248,.12)', tension: .35, pointRadius: 4, fill: true },
+      { label: '班平均', data: clsATrend, borderColor: '#3a4060', borderDash: [5,4], tension: .35, pointRadius: 0 },
+    ]},
+    options: chartOpts(30, 100),
+  });
+
+  makeChart('stu-eng-chart', {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: '英文', data: engTrend, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,.1)', tension: .35, pointRadius: 4, fill: true },
+      { label: '班平均', data: engAvg, borderColor: '#3a4060', borderDash: [5,4], tension: .35, pointRadius: 0 },
+    ]},
+    options: chartOpts(10, 105),
+  });
+}
+
+// ─── trend table (shared between student/teacher) ──────────
+function renderTrendTable(id, teacherMode) {
+  const periods = displayPeriods();
+  let lastSem = '', rows = '';
+
+  periods.forEach(p => {
+    const r = getRec(id, p);
+    if (!r) return;
+    const exam = DB.exams[p];
+    if (exam.semester !== lastSem) {
+      rows += `<tr class="sem-sep"><td colspan="10">${exam.semester}</td></tr>`;
+      lastSem = exam.semester;
     }
-  }
+    const subjs = subjsForPeriod(p);
+    const avg   = DB.classAvg[p] || {};
+    const cells = subjs.slice(0, 6).map(k => {
+      const v = r[k];
+      if (v == null) return '<td style="color:var(--muted2)">—</td>';
+      return `<td style="color:${scoreColor(v, avg[k])};font-weight:700">${v}</td>`;
+    }).join('');
+    const rankCells = teacherMode
+      ? `<td>${r['班排'] ? `<span class="rank-badge ${rankColor(r['班排'])}">${r['班排']}</span>` : '<span class="rank-na">—</span>'}</td>
+         <td>${r['年排'] ? `<span class="rank-badge ${rankColor(r['年排'])}">${r['年排']}</span>` : '<span class="rank-na">—</span>'}</td>`
+      : '';
+    rows += `<tr>
+      <td class="period-tag">${exam.exam}</td>
+      <td style="font-weight:700">${r['學科平均']?.toFixed(1) || '—'}</td>
+      ${cells}
+      ${rankCells}
+    </tr>`;
+  });
 
-  return card;
+  const rh = teacherMode ? '<th>班排</th><th>年排</th>' : '';
+  return `<table class="data-table">
+    <thead><tr><th>考試</th><th>均分</th><th>國文</th><th>英文</th><th>數學/B</th><th>歷史</th><th>地/公</th><th>物/其他</th>${rh}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
-// ─────────────────────────────────────
-//  AUTH BADGE
-// ─────────────────────────────────────
-function updateAuthBadge() {
-  const badge = document.getElementById('authBadge');
-  const dot   = document.getElementById('authDot');
-  const label = document.getElementById('authLabel');
+// ═══════════════════════════════════════════════════════════
+//  TEACHER VIEW
+// ═══════════════════════════════════════════════════════════
+function renderTeacher() {
+  const id  = document.getElementById('tch-select').value;
+  if (!id) { renderTeacherOverview(); return; }
 
-  if (AUTH.state === 'admin') {
-    badge.style.display = 'flex';
-    dot.className = 'auth-dot admin';
-    label.textContent = 'ADMIN';
-  } else if (AUTH.state === 'individual') {
-    badge.style.display = 'flex';
-    dot.className = 'auth-dot unlocked';
-    label.textContent = 'VERIFIED';
-  } else {
-    badge.style.display = 'none';
-  }
+  const name   = DB.studentById?.[id]?.name || id;
+  const recs   = (DB.byStudent[id] || []);  // all records incl. private
+  const latest = [...recs].reverse().find(r => ['第一次','第二次','第三次'].includes(r.exam));
+  const subjs  = latest ? subjsForPeriod(latest.period).filter(k => latest[k] != null) : [];
+  const clsAvg = latest ? (DB.classAvg[latest.period] || {}) : {};
+  const latestSem = latest ? DB.exams[latest.period]?.semester : '';
+
+  const allP = allPeriods();
+  const labels = allP.map(p => { const e = DB.exams[p]; return e.semester.slice(1) + '\n' + e.exam; });
+
+  const el = document.getElementById('tch-content');
+  el.innerHTML = `
+<div class="section-hd">${name} · 完整成績</div>
+
+<div class="card">
+  <div class="card-title">學科平均走勢（含平時）</div>
+  <div class="legend-row">
+    <div class="legend-item"><div class="legend-dot" style="background:#7c84f8"></div>${name}</div>
+    <div class="legend-item"><div class="legend-dash" style="border-color:#3a4060"></div>班平均</div>
+  </div>
+  <div class="chart-wrap"><canvas id="tch-avg-chart" height="190"></canvas></div>
+</div>
+
+<div class="card">
+  <div class="card-title">班排百分位走勢（越低越好）</div>
+  <div class="chart-wrap"><canvas id="tch-rank-chart" height="160"></canvas></div>
+</div>
+
+<div class="card">
+  <div class="card-title">各科成績 vs 班平均（${latestSem} ${latest?.exam || ''}）</div>
+  <div class="subj-list">
+    ${subjs.map(k => {
+      const v = latest[k], a = clsAvg[k] || 0;
+      const col = scoreColor(v, a);
+      return `<div class="subj-row">
+        <span class="subj-label">${k}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${Math.min(v,100)}%;background:${col}"></div>
+          <div class="bar-avg-tick" style="left:${Math.min(a,100)}%"></div>
+        </div>
+        <span class="subj-val" style="color:${col}">${v}</span>
+        ${diffTag(v, a)}
+      </div>`;
+    }).join('')}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">完整成績明細（含班排／年排）</div>
+  <div class="notice" style="margin-bottom:10px">高一為原班排，高二為重新分班後 501 班排</div>
+  ${renderTrendTable(id, true)}
+</div>`;
+
+  // avg trend (all periods incl. private)
+  makeChart('tch-avg-chart', {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: name, data: allP.map(p => recs.find(r=>r.period===p)?.['學科平均'] ?? null), borderColor:'#7c84f8', backgroundColor:'rgba(124,132,248,.1)', tension:.35, pointRadius:4, fill:true },
+      { label:'班平均', data: allP.map(p => DB.classAvg[p]?.['學科平均'] ?? null), borderColor:'#3a4060', borderDash:[5,4], tension:.35, pointRadius:0 },
+    ]},
+    options: chartOpts(20, 105),
+  });
+
+  // rank percentile
+  const rankRecs = allP.map(p => recs.find(r => r.period === p)).filter(r => r && r['班排']);
+  const rankLabels = rankRecs.map(r => { const e = DB.exams[r.period]; return e.semester.slice(1)+'\n'+e.exam; });
+  const rankPcts   = rankRecs.map(r => { const [n,t] = r['班排'].split('/').map(Number); return Math.round(n/t*100); });
+  makeChart('tch-rank-chart', {
+    type: 'line',
+    data: { labels: rankLabels, datasets: [{
+      label: '班排百分位',
+      data: rankPcts,
+      borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.1)',
+      tension: .35, pointRadius: 4, fill: true,
+    }]},
+    options: { ...chartOpts(0, 105), scales: { ...chartOpts(0,105).scales,
+      y: { ...chartOpts(0,105).scales.y, ticks: { color:'#6b75a0', callback: v => v+'%' } }
+    }},
+  });
 }
 
-function logout() {
-  AUTH = { state: 'guest', idHash: null };
-  saveAuth();
-  renderMain();
+// ─── teacher overview ───────────────────────────────────────
+function renderTeacherOverview() {
+  const el = document.getElementById('tch-content');
+
+  // use latest exam with ranks
+  const rankPeriod = [...allPeriods()].reverse().find(p => {
+    const e = DB.exams[p];
+    return e && !e.private && ['學期','第三次'].includes(e.exam);
+  }) || allPeriods().slice(-1)[0];
+
+  const rows = DB.students.map(s => {
+    const r = getRec(s.id, rankPeriod) || stuRecs(s.id).slice(-1)[0];
+    if (!r) return null;
+    return { s, avg: r['學科平均']?.toFixed(1)||'—', rank: r['班排']||'—', yearR: r['年排']||'—', eng: r['英文']||'—' };
+  }).filter(Boolean);
+
+  rows.sort((a, b) => {
+    const n = x => { const [v,t]=(x.rank||'99/99').split('/').map(Number); return v/(t||1); };
+    return n(a) - n(b);
+  });
+
+  el.innerHTML = `
+<div class="section-hd">全班概覽 · 高二上學期</div>
+<div class="notice">點擊學生姓名可查看個人詳細分析。</div>
+
+<div class="card">
+  <div class="card-title">班級排名總覽</div>
+  <table class="data-table">
+    <thead><tr><th>姓名</th><th>學科均</th><th>英文</th><th>班排</th><th>年排</th></tr></thead>
+    <tbody>
+      ${rows.map(r => `<tr onclick="selectTchStu('${r.s.id}')" style="cursor:pointer">
+        <td style="font-weight:700">${r.s.name}</td>
+        <td style="font-weight:700">${r.avg}</td>
+        <td>${r.eng}</td>
+        <td><span class="rank-badge ${rankColor(r.rank)}">${r.rank}</span></td>
+        <td><span class="rank-badge ${rankColor(r.yearR)}">${r.yearR}</span></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-title">全班英文分布（高二上三次月考）</div>
+  <div class="chart-wrap"><canvas id="tch-eng-all" height="220"></canvas></div>
+</div>`;
+
+  // class english chart
+  const engPs = EXAM_IDS.filter(id => DB.exams[id] && DB.exams[id].semester === '高二上' && ['第一次','第二次','第三次'].includes(DB.exams[id].exam));
+  const engLabels = engPs.map(p => DB.exams[p].exam);
+  const stuDatasets = DB.students.map((s, i) => ({
+    label: s.name,
+    data: engPs.map(p => getRec(s.id, p)?.['英文'] ?? null),
+    borderColor: PALETTE[i % PALETTE.length] + '99',
+    backgroundColor: 'transparent',
+    tension: .3, pointRadius: 3, borderWidth: 1.5, hidden: i > 8,
+  }));
+  stuDatasets.push({
+    label: '班平均', data: engPs.map(p => DB.classAvg[p]?.['英文'] ?? null),
+    borderColor: '#fff', borderDash: [6,3], borderWidth: 2.5, pointRadius: 5, tension: .3,
+  });
+  makeChart('tch-eng-all', {
+    type: 'line',
+    data: { labels: engLabels, datasets: stuDatasets },
+    options: { ...chartOpts(10, 105), plugins: { legend: { position:'bottom', labels:{ boxWidth:8, font:{size:10}, color:'#6b75a0' } } } },
+  });
 }
 
-// ─────────────────────────────────────
-//  INDIVIDUAL LOCK MODAL
-// ─────────────────────────────────────
-function openModal() {
-  document.getElementById('modalBackdrop').classList.add('open');
-  document.getElementById('modalErr').textContent = '';
-  const inp = document.getElementById('idInput');
-  inp.value = '';
-  inp.classList.remove('error');
-  setTimeout(() => inp.focus(), 80);
+function selectTchStu(id) {
+  document.getElementById('tch-select').value = id;
+  renderTeacher();
+  window.scrollTo(0, 0);
 }
 
-function closeModal() {
-  document.getElementById('modalBackdrop').classList.remove('open');
+// ═══════════════════════════════════════════════════════════
+//  ENGLISH TAB
+// ═══════════════════════════════════════════════════════════
+function renderEnglish() {
+  const el = document.getElementById('eng-content');
+  const mps = monthlyPeriods();
+  const labels = mps.map(p => { const e = DB.exams[p]; return e.semester.slice(1)+' '+e.exam; });
+
+  const stats = mps.map(p => {
+    const vals = DB.students.map(s => getRec(s.id, p)?.['英文']).filter(v => v != null);
+    vals.sort((a,b) => a-b);
+    const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+    return { avg: avg.toFixed(1), max: Math.max(...vals), min: Math.min(...vals),
+             above80: vals.filter(v=>v>=80).length, below60: vals.filter(v=>v<60).length, n: vals.length };
+  });
+
+  el.innerHTML = `
+<div class="section-hd">英文科 · 全班趨勢分析</div>
+
+<div class="card">
+  <div class="card-title">各次月考統計</div>
+  <table class="data-table">
+    <thead><tr><th>考試</th><th>班平均</th><th>最高</th><th>最低</th><th>≥80人數</th><th>&lt;60人數</th></tr></thead>
+    <tbody>
+      ${mps.map((p,i) => {
+        const e = DB.exams[p], d = stats[i];
+        return `<tr>
+          <td class="period-tag">${e.semester.slice(1)} ${e.exam}</td>
+          <td style="font-weight:700">${d.avg}</td>
+          <td style="color:var(--green)">${d.max}</td>
+          <td style="color:var(--red)">${d.min}</td>
+          <td><span style="color:var(--green)">${d.above80}</span>/${d.n}</td>
+          <td><span style="color:var(--red)">${d.below60}</span>/${d.n}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-title">全班英文走勢（白線 = 班平均）</div>
+  <div class="chart-wrap"><canvas id="eng-all-chart" height="230"></canvas></div>
+</div>
+
+<div class="card">
+  <div class="card-title">個人英文走勢查詢</div>
+  <select id="eng-stu-select" onchange="renderEngStudent()">
+    <option value="">— 請選擇 —</option>
+    ${[...DB.students].sort((a,b)=>(a.seat??99)-(b.seat??99)).map(s=>{const lb=s.seat!=null?`${String(s.seat).padStart(2,'0')} · ${s.name}`:s.name;return `<option value="${s.id}">${lb}</option>`;}).join('')}
+  </select>
+  <div id="eng-stu-detail" style="margin-top:14px"></div>
+</div>`;
+
+  // all students + class avg
+  const stuDS = DB.students.map((s,i) => ({
+    label: s.name, hidden: true,
+    data: mps.map(p => getRec(s.id,p)?.['英文'] ?? null),
+    borderColor: PALETTE[i%PALETTE.length]+'99', backgroundColor:'transparent',
+    tension:.3, pointRadius:2, borderWidth:1.5,
+  }));
+  stuDS.push({
+    label:'班平均',
+    data: mps.map(p => DB.classAvg[p]?.['英文'] ?? null),
+    borderColor:'#fff', borderDash:[6,3], borderWidth:3, pointRadius:5, tension:.3, hidden:false,
+  });
+  makeChart('eng-all-chart', {
+    type:'line',
+    data: { labels, datasets: stuDS },
+    options: { ...chartOpts(0,105), plugins:{ legend:{ display:false } } },
+  });
 }
 
-function closeModalIfOutside(e) {
-  if (e.target.id === 'modalBackdrop') closeModal();
+function renderEngStudent() {
+  const id = document.getElementById('eng-stu-select').value;
+  const el = document.getElementById('eng-stu-detail');
+  if (!id) { el.innerHTML=''; return; }
+
+  const name = DB.studentById?.[id]?.name || id;
+  const mps  = monthlyPeriods();
+  const labels = mps.map(p => { const e=DB.exams[p]; return e.semester.slice(1)+' '+e.exam; });
+  const vals = mps.map(p => getRec(id,p)?.['英文'] ?? null);
+  const avgs = mps.map(p => DB.classAvg[p]?.['英文'] ?? null);
+  const valid = vals.filter(v=>v!=null);
+
+  const avg  = valid.length ? (valid.reduce((a,b)=>a+b,0)/valid.length).toFixed(1) : '—';
+  const maxV = valid.length ? Math.max(...valid) : '—';
+  const minV = valid.length ? Math.min(...valid) : '—';
+  const last = valid[valid.length-1], first = valid[0];
+  const trend = valid.length >= 2
+    ? (last-first > 3 ? '↑ 上升' : last-first < -3 ? '↓ 下降' : '→ 持平') : '—';
+
+  el.innerHTML = `
+<div class="stat-row">
+  <div class="stat-pill c-accent"><div class="val">${avg}</div><div class="lbl">平均</div></div>
+  <div class="stat-pill c-green"><div class="val">${maxV}</div><div class="lbl">最高</div></div>
+  <div class="stat-pill c-red"><div class="val">${minV}</div><div class="lbl">最低</div></div>
+  <div class="stat-pill c-blue"><div class="val" style="font-size:15px">${trend}</div><div class="lbl">整體趨勢</div></div>
+</div>
+<table class="data-table" style="margin-bottom:14px">
+  <thead><tr><th>考試</th><th>英文</th><th>vs 班平均</th></tr></thead>
+  <tbody>
+    ${mps.map((p,i)=>{
+      const v=vals[i], a=avgs[i];
+      const e=DB.exams[p];
+      if (v==null) return `<tr><td class="period-tag">${e.semester.slice(1)} ${e.exam}</td><td colspan="2" style="color:var(--muted2)">—</td></tr>`;
+      return `<tr><td class="period-tag">${e.semester.slice(1)} ${e.exam}</td><td style="color:${scoreColor(v,a)};font-weight:700">${v}</td><td>${diffTag(v,a)}</td></tr>`;
+    }).join('')}
+  </tbody>
+</table>
+<div class="chart-wrap"><canvas id="eng-stu-chart" height="160"></canvas></div>`;
+
+  makeChart('eng-stu-chart', {
+    type:'line',
+    data:{ labels, datasets:[
+      { label:name, data:vals, borderColor:'#38bdf8', backgroundColor:'rgba(56,189,248,.1)', tension:.35, pointRadius:4, fill:true },
+      { label:'班平均', data:avgs, borderColor:'#3a4060', borderDash:[5,4], tension:.35, pointRadius:0 },
+    ]},
+    options: chartOpts(10, 105),
+  });
 }
 
-function limitThree(el) {
-  const v = el.value.replace(/\D/g,'').slice(0,3);
-  el.value = v;
-  if (v.length === 3) verifyIndividual();
-}
-
-async function verifyIndividual() {
-  const inp   = document.getElementById('idInput');
-  const errEl = document.getElementById('modalErr');
-  const raw   = inp.value.trim();   // preserve original for admin password
-  const cfg   = NAV.site_config;
-
-  if (!raw) { errEl.textContent = '請輸入後三碼'; return; }
-
-  // ── Step 1: Admin passthrough (raw input, no padding) ──
-  // Admin can type their full password here too; hash the raw value first.
-  const rawHash = await sha256(raw);
-  if (cfg.admin_hash && rawHash === cfg.admin_hash) {
-    AUTH = { state: 'admin', idHash: rawHash };
-    saveAuth(); closeModal();
-    renderMain();
-    return;
-  }
-
-  // ── Step 2: Student 3-digit ID check ──
-  const padded = raw.padStart(3, '0');
-  if (!/^\d{3}$/.test(padded)) {
-    inp.classList.add('error');
-    setTimeout(() => inp.classList.remove('error'), 500);
-    errEl.textContent = '請輸入三位數字後三碼';
-    return;
-  }
-
-  const idHash = await sha256(padded);
-
-  // Try to fetch individual data file (optional — teacher creates these)
-  try {
-    const res = await fetch(`data/${idHash.slice(0,16)}.json?v=` + Date.now());
-    if (res.ok) {
-      AUTH = { state: 'individual', idHash: idHash };
-      saveAuth(); closeModal();
-      renderMain();
-      return;
-    }
-  } catch (_) { /* no data file is fine */ }
-
-  // Fallback: any valid 3-digit code unlocks private cards
-  // (Teacher controls access by simply not creating the data file for invalid IDs)
-  AUTH = { state: 'individual', idHash: idHash };
-  saveAuth(); closeModal();
-  renderMain();
-}
-
-// ─────────────────────────────────────
-//  SHA-256
-// ─────────────────────────────────────
-async function sha256(str) {
-  const buf = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(str)
-  );
-  return Array.from(new Uint8Array(buf))
-    .map(b => b.toString(16).padStart(2,'0'))
-    .join('');
-}
-
-// ─────────────────────────────────────
-//  SESSION STORAGE
-// ─────────────────────────────────────
-function saveAuth() {
-  sessionStorage.setItem('auth501', JSON.stringify(AUTH));
-}
+// ── BOOT ──
+loadAll();
 </script>
 </body>
 </html>
