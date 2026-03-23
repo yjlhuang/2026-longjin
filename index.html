@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>501 戰略指揮部</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Mono:wght@400;700&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
+<style>
+/* ════════════════════════════════════════
+   TOKENS
+════════════════════════════════════════ */
+:root {
+  --bg:       #09090c;
+  --bg2:      #0f0f14;
+  --surface:  #14141b;
+  --card:     #1a1a24;
+  --border:   #252535;
+  --border2:  #1e1e2a;
+
+  --text:     #dde0f0;
+  --muted:    #5a5d75;
+  --muted2:   #3a3d52;
+
+  --green:    #22c55e;
+  --green-dim:#0d2b1a;
+  --green-b:  #1a4a2a;
+
+  --blue:     #6b9fff;
+  --blue-dim: #0d1a2e;
+
+  --purple:   #a07aff;
+  --purple-dim:#1a1030;
+
+  --amber:    #f0a84a;
+  --amber-dim:#2a1a08;
+
+  --red:      #ef4444;
+  --red-dim:  #2a0a0a;
+
+  --cyan:     #22d3ee;
+
+  --font-mono: 'Space Mono', monospace;
+  --font-body: 'Noto Sans TC', sans-serif;
+  --font-serif:'Noto Serif TC', serif;
+
+  --r-card: 14px;
+  --r-sm:   8px;
+
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+/* ════════════════════════════════════════
+   RESET + BASE
+════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* scanline overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent, transparent 2px,
+    rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+  );
+}
+
+/* ════════════════════════════════════════
+   SCREENS
+════════════════════════════════════════ */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ════════════════════════════════════════
+   GLOBAL LOCK SCREEN
+════════════════════════════════════════ */
+#lockScreen {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px;
+}
+.lock-logo {
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: 5px;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 32px;
+}
+.lock-icon { font-size: 48px; margin-bottom: 20px; }
+.lock-title {
+  font-family: var(--font-serif);
+  font-size: clamp(22px, 5vw, 32px);
+  font-weight: 700; color: var(--text);
+  letter-spacing: 2px; margin-bottom: 8px; text-align: center;
+}
+.lock-sub {
+  font-size: 12px; color: var(--muted);
+  margin-bottom: 32px; letter-spacing: 1px; text-align: center;
+}
+.lock-box {
+  width: 100%; max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 28px 24px;
+}
+.lock-label {
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 2px;
+  color: var(--muted); margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.lock-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 20px; letter-spacing: 4px;
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  outline: none;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.lock-input:focus { border-color: var(--purple); }
+.lock-input.error { border-color: var(--red); animation: shake 0.3s; }
+.lock-btn {
+  width: 100%; margin-top: 14px;
+  padding: 14px;
+  background: var(--purple);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 2px;
+  border: none; border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+.lock-btn:hover { opacity: 0.88; }
+.lock-btn:active { transform: scale(0.98); }
+.lock-err {
+  margin-top: 10px; font-size: 12px;
+  color: var(--red); text-align: center;
+  min-height: 18px;
+}
+
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
+}
+
+/* ════════════════════════════════════════
+   MAIN SCREEN
+════════════════════════════════════════ */
+#mainScreen { position: relative; z-index: 1; }
+
+/* ── Header ── */
+.site-header {
+  padding: 28px 20px 20px;
+  max-width: 900px; margin: 0 auto;
+  position: relative;
+}
+.site-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 4px;
+  color: var(--muted); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.site-title {
+  font-family: var(--font-serif);
+  font-size: clamp(22px, 5vw, 36px);
+  font-weight: 700; color: var(--text);
+  letter-spacing: 2px;
+  line-height: 1.1;
+}
+.site-title span { color: var(--purple); }
+.site-meta {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--muted);
+  letter-spacing: 1px;
+}
+.header-auth-badge {
+  position: absolute; top: 28px; right: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.auth-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--muted2);
+  box-shadow: 0 0 6px var(--muted2);
+}
+.auth-dot.unlocked { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.auth-dot.admin    { background: var(--amber);  box-shadow: 0 0 8px var(--amber); }
+.auth-label {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--muted); letter-spacing: 1px;
+}
+.logout-btn {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--muted); background: none;
+  border: 1px solid var(--border2);
+  padding: 4px 10px; border-radius: 4px;
+  cursor: pointer; letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.logout-btn:hover { color: var(--red); border-color: var(--red); }
+
+/* ── Announcement ── */
+.announcement-bar {
+  max-width: 900px; margin: 0 auto 20px;
+  padding: 0 20px;
+}
+.announcement {
+  background: linear-gradient(135deg, var(--amber-dim), rgba(42,26,8,0.5));
+  border: 1px solid rgba(240,168,74,0.3);
+  border-left: 3px solid var(--amber);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+  font-size: 13px; color: var(--amber);
+  line-height: 1.6;
+}
+.announcement-date {
+  float: right;
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--muted);
+  margin-left: 12px;
+}
+
+/* ── Category sections ── */
+.categories-wrap {
+  max-width: 900px; margin: 0 auto;
+  padding: 0 20px 60px;
+}
+.category-section { margin-bottom: 36px; }
+.category-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border2);
+}
+.cat-icon { font-size: 18px; }
+.cat-title {
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+}
+.cat-title-zh {
+  font-family: var(--font-body);
+  font-size: 14px; font-weight: 700;
+  color: var(--text);
+}
+.cat-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 2px 8px; border-radius: 10px;
+}
+
+/* ── Cards grid ── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.artifact-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 18px 16px 16px;
+  position: relative; overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  text-decoration: none; color: inherit;
+  display: block;
+}
+.artifact-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.artifact-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.artifact-card:hover::before { opacity: 1; }
+
+/* card colour accents per category */
+.artifact-card[data-cat="vocab"]::before    { background: linear-gradient(90deg, transparent, #22c55e, transparent); }
+.artifact-card[data-cat="strategy"]::before { background: linear-gradient(90deg, transparent, #6b9fff, transparent); }
+.artifact-card[data-cat="command"]::before  { background: linear-gradient(90deg, transparent, #a07aff, transparent); }
+
+.artifact-card[data-cat="vocab"]:hover    { border-color: rgba(34,197,94,0.4); }
+.artifact-card[data-cat="strategy"]:hover { border-color: rgba(107,159,255,0.4); }
+.artifact-card[data-cat="command"]:hover  { border-color: rgba(160,122,255,0.4); }
+
+.card-icon { font-size: 22px; margin-bottom: 10px; }
+.card-title {
+  font-size: 14px; font-weight: 700;
+  color: var(--text); margin-bottom: 6px;
+  line-height: 1.3;
+}
+.card-desc {
+  font-size: 11px; color: var(--muted);
+  line-height: 1.6; margin-bottom: 12px;
+}
+.card-footer {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+}
+.diff-badge {
+  font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 1px;
+  padding: 2px 7px; border-radius: 4px;
+  border: 1px solid;
+}
+.diff-badge.Beginner      { color: var(--green); border-color: var(--green-b); background: var(--green-dim); }
+.diff-badge.Intermediate  { color: var(--blue);  border-color: rgba(107,159,255,0.3); background: var(--blue-dim); }
+.diff-badge.Advanced      { color: var(--purple);border-color: rgba(160,122,255,0.3); background: var(--purple-dim); }
+
+.external-badge {
+  font-family: var(--font-mono);
+  font-size: 9px; color: var(--cyan);
+  border: 1px solid rgba(34,211,238,0.3);
+  background: rgba(34,211,238,0.08);
+  padding: 2px 7px; border-radius: 4px;
+  letter-spacing: 1px;
+}
+.skill-tag {
+  font-size: 9px; color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 2px 6px; border-radius: 4px;
+}
+
+/* private locked card state */
+.artifact-card.is-locked {
+  cursor: default;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.artifact-card.is-locked-unlockable {
+  cursor: pointer;
+  opacity: 0.75;
+}
+.lock-overlay {
+  position: absolute; inset: 0;
+  background: rgba(9,9,12,0.7);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 6px; border-radius: var(--r-card);
+  backdrop-filter: blur(2px);
+}
+.lock-overlay-icon { font-size: 28px; }
+.lock-overlay-text {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--muted);
+  letter-spacing: 2px;
+}
+
+/* ── Individual lock modal ── */
+.modal-backdrop {
+  display: none;
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 28px 24px;
+  width: 100%; max-width: 340px;
+  box-shadow: var(--shadow);
+}
+.modal-title {
+  font-family: var(--font-mono);
+  font-size: 11px; letter-spacing: 3px;
+  color: var(--purple); text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.modal-desc {
+  font-size: 13px; color: var(--muted);
+  margin-bottom: 20px; line-height: 1.6;
+}
+.modal input {
+  width: 100%; background: var(--bg2);
+  border: 1px solid var(--border); color: var(--text);
+  font-family: var(--font-mono); font-size: 22px;
+  letter-spacing: 8px; padding: 14px; border-radius: var(--r-sm);
+  outline: none; text-align: center;
+  transition: border-color 0.2s;
+}
+.modal input:focus { border-color: var(--purple); }
+.modal input.error { border-color: var(--red); animation: shake 0.3s; }
+.modal-actions { display: flex; gap: 10px; margin-top: 14px; }
+.modal-btn {
+  flex: 1; padding: 12px;
+  font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: 1px; border-radius: var(--r-sm);
+  cursor: pointer; border: none;
+  transition: opacity 0.2s;
+}
+.modal-btn.primary { background: var(--purple); color: #fff; }
+.modal-btn.secondary { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+.modal-btn:hover { opacity: 0.85; }
+.modal-err { margin-top: 8px; font-size: 11px; color: var(--red); min-height: 16px; }
+
+/* ── Footer ── */
+.site-footer {
+  max-width: 900px; margin: 0 auto;
+  padding: 24px 20px;
+  border-top: 1px solid var(--border2);
+  text-align: center;
+}
+.footer-copy {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--muted2);
+  letter-spacing: 0.5px; line-height: 1.8;
+}
+
+/* ── Priority badge ── */
+.priority-badge {
+  position: absolute; top: 12px; right: 12px;
+  font-size: 9px; font-family: var(--font-mono);
+  letter-spacing: 0.5px; font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #f97316, #ef4444);
+  padding: 3px 8px; border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(239,68,68,0.4);
+  white-space: nowrap;
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}
+@keyframes pulseGlow {
+  0%,100% { box-shadow: 0 2px 8px rgba(239,68,68,0.4); }
+  50%      { box-shadow: 0 2px 16px rgba(249,115,22,0.7); }
+}
+
+/* ── Time badge ── */
+.time-badge {
+  font-family: var(--font-mono);
+  font-size: 9px; color: var(--muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+#loadingScreen {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 16px;
+}
+.loader-ring {
+  width: 40px; height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--purple);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-text {
+  font-family: var(--font-mono);
+  font-size: 11px; color: var(--muted);
+  letter-spacing: 3px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .header-auth-badge { position: static; margin-top: 12px; }
+}
+
+/* ── Fade in ── */
+.fade-in {
+  animation: fadeIn 0.4s ease both;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fade-in-delay-1 { animation-delay: 0.05s; }
+.fade-in-delay-2 { animation-delay: 0.10s; }
+.fade-in-delay-3 { animation-delay: 0.15s; }
+.fade-in-delay-4 { animation-delay: 0.20s; }
+</style>
+</head>
+<body>
+
+<!-- ════ LOADING ════ -->
+<div id="loadingScreen" class="screen active">
+  <div class="loader-ring"></div>
+  <div class="loader-text">INITIALIZING...</div>
+</div>
+
+<!-- ════ GLOBAL LOCK ════ -->
+<div id="lockScreen" class="screen">
+  <div class="lock-logo">501 · LEARNING OS</div>
+  <div class="lock-icon">🔒</div>
+  <div class="lock-title" id="lockTitle">501 戰略指揮部</div>
+  <div class="lock-sub">ACCESS RESTRICTED — ENTER PASSPHRASE</div>
+  <div class="lock-box">
+    <div class="lock-label">系統密鑰 / MASTER KEY</div>
+    <input class="lock-input" id="globalPassInput" type="password"
+           maxlength="32" autocomplete="off" placeholder="••••••••"
+           autofocus>
+    <button class="lock-btn" onclick="verifyGlobalLock()">解鎖 UNLOCK</button>
+    <div class="lock-err" id="globalLockErr"></div>
+  </div>
+</div>
+
+<!-- ════ MAIN ════ -->
+<div id="mainScreen" class="screen">
+  <header class="site-header fade-in">
+    <div class="site-eyebrow" id="siteEyebrow">LEARNING OS v2.0</div>
+    <div class="site-title"><span id="siteTitleSpan">501</span> 戰略指揮部</div>
+    <div class="site-meta" id="siteMeta"></div>
+    <div class="header-auth-badge" id="authBadge" style="display:none">
+      <div class="auth-dot" id="authDot"></div>
+      <div class="auth-label" id="authLabel">GUEST</div>
+      <button class="logout-btn" onclick="logout()">登出</button>
+    </div>
+  </header>
+
+  <div class="announcement-bar">
+    <div class="announcement" id="announcement"></div>
+  </div>
+
+  <main class="categories-wrap" id="categoriesWrap"></main>
+
+  <footer class="site-footer">
+    <div class="footer-copy" id="footerCopy"></div>
+  </footer>
+</div>
+
+<!-- ════ INDIVIDUAL LOCK MODAL ════ -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModalIfOutside(event)">
+  <div class="modal">
+    <div class="modal-title">🔐 身分驗證</div>
+    <div class="modal-desc">請輸入您的<strong style="color:var(--text)">身分證後三碼</strong>以解鎖個人資料</div>
+    <input id="idInput" type="number" maxlength="3" max="999" min="0"
+           placeholder="000" autocomplete="off"
+           oninput="limitThree(this)"
+           onkeydown="if(event.key==='Enter') verifyIndividual()">
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeModal()">取消</button>
+      <button class="modal-btn primary" onclick="verifyIndividual()">驗證</button>
+    </div>
+    <div class="modal-err" id="modalErr"></div>
+  </div>
+</div>
+
+<!-- ════ SCRIPT ════ -->
+<script>
+// ─────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────
+let NAV = null;
+let AUTH = {
+  state: 'guest',   // 'guest' | 'individual' | 'admin'
+  idHash: null
+};
+
+// ─────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // Restore session
+  const saved = sessionStorage.getItem('auth501');
+  if (saved) {
+    try { AUTH = JSON.parse(saved); } catch(e) {}
+  }
+
+  try {
+    const res = await fetch('nav.json?v=' + Date.now());
+    if (!res.ok) throw new Error('nav.json not found');
+    NAV = await res.json();
+  } catch(e) {
+    showError('無法載入 nav.json，請確認檔案已上傳。');
+    return;
+  }
+
+  const cfg = NAV.site_config;
+
+  // Update page title
+  document.title = cfg.site_title || '501 戰略指揮部';
+
+  // Global lock check
+  if (cfg.is_global_locked && cfg.master_password_hash) {
+    // Already passed global lock this session?
+    if (!sessionStorage.getItem('globalUnlocked')) {
+      showScreen('lockScreen');
+      document.getElementById('lockTitle').textContent = cfg.site_title;
+      document.getElementById('globalPassInput').focus();
+      return;
+    }
+  }
+
+  renderMain();
+});
+
+// ─────────────────────────────────────
+//  SCREENS
+// ─────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showError(msg) {
+  document.getElementById('loadingScreen').innerHTML =
+    `<div style="text-align:center;padding:40px 20px">
+       <div style="font-size:32px;margin-bottom:16px">⚠️</div>
+       <div style="font-family:var(--font-mono);font-size:12px;color:var(--red);letter-spacing:2px">${msg}</div>
+     </div>`;
+}
+
+// ─────────────────────────────────────
+//  GLOBAL LOCK
+// ─────────────────────────────────────
+async function verifyGlobalLock() {
+  const input = document.getElementById('globalPassInput');
+  const errEl = document.getElementById('globalLockErr');
+  const val = input.value.trim();
+  if (!val) return;
+
+  const hash = await sha256(val);
+  const cfg = NAV.site_config;
+
+  // Check admin
+  if (cfg.admin_hash && hash === cfg.admin_hash) {
+    AUTH = { state: 'admin', idHash: null };
+    saveAuth();
+    sessionStorage.setItem('globalUnlocked', '1');
+    renderMain();
+    return;
+  }
+
+  if (hash === cfg.master_password_hash) {
+    sessionStorage.setItem('globalUnlocked', '1');
+    renderMain();
+    return;
+  }
+
+  input.classList.add('error');
+  setTimeout(() => input.classList.remove('error'), 500);
+  errEl.textContent = '密鑰錯誤，請再試一次';
+}
+
+document.getElementById('globalPassInput')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') verifyGlobalLock();
+});
+
+// ─────────────────────────────────────
+//  RENDER MAIN
+// ─────────────────────────────────────
+function renderMain() {
+  showScreen('mainScreen');
+  const cfg = NAV.site_config;
+
+  // Header
+  document.getElementById('siteEyebrow').textContent = cfg.site_subtitle || 'LEARNING OS';
+  document.getElementById('siteTitleSpan').textContent = cfg.site_title?.split(' ')[0] || '501';
+  document.getElementById('siteMeta').textContent =
+    `LAST UPDATE: ${cfg.last_update || '—'}`;
+
+  // Auth badge
+  updateAuthBadge();
+
+  // Announcement
+  const annEl = document.getElementById('announcement');
+  if (cfg.announcement) {
+    const dateStr = cfg.last_update ? `<span class="announcement-date">${cfg.last_update}</span>` : '';
+    annEl.innerHTML = dateStr + cfg.announcement;
+    annEl.parentElement.style.display = '';
+  } else {
+    annEl.parentElement.style.display = 'none';
+  }
+
+  // Footer
+  document.getElementById('footerCopy').innerHTML =
+    (cfg.footer_copyright || '') + '<br>本系統之數據邏輯、分析架構及教案資源受著作權法保護。未經授權之複製、修改或轉載，將依法追究法律責任。';
+
+  // Categories + cards
+  const wrap = document.getElementById('categoriesWrap');
+  wrap.innerHTML = '';
+
+  NAV.categories.forEach((cat, ci) => {
+    const items = NAV.artifact_registry.filter(a => a.category === cat.id);
+    if (!items.length) return;
+
+    const section = document.createElement('div');
+    section.className = `category-section fade-in fade-in-delay-${Math.min(ci+1,4)}`;
+
+    section.innerHTML = `
+      <div class="category-header">
+        <span class="cat-icon">${cat.icon}</span>
+        <span class="cat-title-zh" style="color:${cat.color}">${cat.label}</span>
+        <span class="cat-title" style="color:${cat.color};opacity:0.5">${cat.label_en}</span>
+        <span class="cat-count">${items.length} 項</span>
+      </div>
+      <div class="cards-grid" id="grid-${cat.id}"></div>
+    `;
+    wrap.appendChild(section);
+
+    const grid = section.querySelector(`#grid-${cat.id}`);
+    items.forEach(item => {
+      grid.appendChild(buildCard(item));
+    });
+  });
+}
+
+// ─────────────────────────────────────
+//  BUILD CARD
+// ─────────────────────────────────────
+function buildCard(item) {
+  const isPrivate = item.is_private;
+  const isUnlocked = AUTH.state === 'admin' ||
+    (AUTH.state === 'individual' && AUTH.idHash);
+
+  const card = document.createElement('a');
+  card.className = 'artifact-card';
+  card.dataset.cat = item.category;
+  card.dataset.id  = item.id;
+
+  const skillTags = (item.target_skills || []).slice(0,2)
+    .map(s => `<span class="skill-tag">${s}</span>`).join('');
+
+  const extBadge = item.is_external
+    ? `<span class="external-badge">↗ 外部</span>` : '';
+
+  const priorityBadge = item.priority === 1
+    ? `<div class="priority-badge">🔥 建議首選</div>` : '';
+
+  const timeBadge = item.estimated_time
+    ? `<span class="time-badge">⏱ ${item.estimated_time}min</span>` : '';
+
+  card.innerHTML = `
+    ${priorityBadge}
+    <div class="card-icon">${item.icon || '📄'}</div>
+    <div class="card-title">${item.title}</div>
+    <div class="card-desc">${item.desc}</div>
+    <div class="card-footer">
+      <span class="diff-badge ${item.difficulty}">${item.difficulty}</span>
+      ${extBadge}
+      ${skillTags}
+      ${timeBadge}
+    </div>
+  `;
+
+  if (isPrivate && !isUnlocked) {
+    // Show lock overlay
+    card.classList.add('artifact-card', 'is-locked-unlockable');
+    card.style.pointerEvents = 'auto';
+    card.style.opacity = '0.7';
+    const overlay = document.createElement('div');
+    overlay.className = 'lock-overlay';
+    overlay.innerHTML = `
+      <div class="lock-overlay-icon">🔐</div>
+      <div class="lock-overlay-text">需要驗證身分</div>
+    `;
+    card.appendChild(overlay);
+    card.addEventListener('click', e => { e.preventDefault(); openModal(); });
+  } else {
+    // Normal link
+    if (item.url && item.url !== '#') {
+      card.href = item.url;
+      if (item.is_external) card.target = '_blank';
+    } else {
+      card.style.cursor = 'default';
+    }
+  }
+
+  return card;
+}
+
+// ─────────────────────────────────────
+//  AUTH BADGE
+// ─────────────────────────────────────
+function updateAuthBadge() {
+  const badge = document.getElementById('authBadge');
+  const dot   = document.getElementById('authDot');
+  const label = document.getElementById('authLabel');
+
+  if (AUTH.state === 'admin') {
+    badge.style.display = 'flex';
+    dot.className = 'auth-dot admin';
+    label.textContent = 'ADMIN';
+  } else if (AUTH.state === 'individual') {
+    badge.style.display = 'flex';
+    dot.className = 'auth-dot unlocked';
+    label.textContent = 'VERIFIED';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function logout() {
+  AUTH = { state: 'guest', idHash: null };
+  saveAuth();
+  renderMain();
+}
+
+// ─────────────────────────────────────
+//  INDIVIDUAL LOCK MODAL
+// ─────────────────────────────────────
+function openModal() {
+  document.getElementById('modalBackdrop').classList.add('open');
+  document.getElementById('modalErr').textContent = '';
+  const inp = document.getElementById('idInput');
+  inp.value = '';
+  inp.classList.remove('error');
+  setTimeout(() => inp.focus(), 80);
+}
+
+function closeModal() {
+  document.getElementById('modalBackdrop').classList.remove('open');
+}
+
+function closeModalIfOutside(e) {
+  if (e.target.id === 'modalBackdrop') closeModal();
+}
+
+function limitThree(el) {
+  const v = el.value.replace(/\D/g,'').slice(0,3);
+  el.value = v;
+  if (v.length === 3) verifyIndividual();
+}
+
+async function verifyIndividual() {
+  const inp   = document.getElementById('idInput');
+  const errEl = document.getElementById('modalErr');
+  const raw   = inp.value.trim();   // preserve original for admin password
+  const cfg   = NAV.site_config;
+
+  if (!raw) { errEl.textContent = '請輸入後三碼'; return; }
+
+  // ── Step 1: Admin passthrough (raw input, no padding) ──
+  // Admin can type their full password here too; hash the raw value first.
+  const rawHash = await sha256(raw);
+  if (cfg.admin_hash && rawHash === cfg.admin_hash) {
+    AUTH = { state: 'admin', idHash: rawHash };
+    saveAuth(); closeModal();
+    renderMain();
+    return;
+  }
+
+  // ── Step 2: Student 3-digit ID check ──
+  const padded = raw.padStart(3, '0');
+  if (!/^\d{3}$/.test(padded)) {
+    inp.classList.add('error');
+    setTimeout(() => inp.classList.remove('error'), 500);
+    errEl.textContent = '請輸入三位數字後三碼';
+    return;
+  }
+
+  const idHash = await sha256(padded);
+
+  // Try to fetch individual data file (optional — teacher creates these)
+  try {
+    const res = await fetch(`data/${idHash.slice(0,16)}.json?v=` + Date.now());
+    if (res.ok) {
+      AUTH = { state: 'individual', idHash: idHash };
+      saveAuth(); closeModal();
+      renderMain();
+      return;
+    }
+  } catch (_) { /* no data file is fine */ }
+
+  // Fallback: any valid 3-digit code unlocks private cards
+  // (Teacher controls access by simply not creating the data file for invalid IDs)
+  AUTH = { state: 'individual', idHash: idHash };
+  saveAuth(); closeModal();
+  renderMain();
+}
+
+// ─────────────────────────────────────
+//  SHA-256
+// ─────────────────────────────────────
+async function sha256(str) {
+  const buf = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(str)
+  );
+  return Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2,'0'))
+    .join('');
+}
+
+// ─────────────────────────────────────
+//  SESSION STORAGE
+// ─────────────────────────────────────
+function saveAuth() {
+  sessionStorage.setItem('auth501', JSON.stringify(AUTH));
+}
+</script>
+</body>
+</html>
