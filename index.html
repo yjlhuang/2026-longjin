@@ -3,526 +3,223 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>501 戰略指揮部</title>
+<title>迎戰學測 2027</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Space+Mono:wght@400;700&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
 <style>
-/* ════════════════════════════════════════
-   TOKENS
-════════════════════════════════════════ */
-:root {
-  --bg:       #09090c;
-  --bg2:      #0f0f14;
-  --surface:  #14141b;
-  --card:     #1a1a24;
-  --border:   #252535;
-  --border2:  #1e1e2a;
+:root{
+  --bg:#09090c;--bg2:#0f0f14;--surface:#14141b;--card:#1a1a24;
+  --border:#252535;--border2:#1e1e2a;
+  --text:#dde0f0;--muted:#5a5d75;--muted2:#3a3d52;
+  --green:#22c55e;--green-dim:#0d2b1a;--green-b:#1a4a2a;
+  --blue:#6b9fff;--blue-dim:#0d1a2e;
+  --purple:#a07aff;--purple-dim:#1a1030;
+  --amber:#f0a84a;--amber-dim:#2a1a08;
+  --red:#ef4444;--red-dim:#2a0a0a;
+  --cyan:#22d3ee;
+  --font-mono:'Space Mono',monospace;
+  --font-body:'Noto Sans TC',sans-serif;
+  --font-serif:'Noto Serif TC',serif;
+  --r-card:14px;--r-sm:8px;
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);}
+.screen{display:none;}.screen.active{display:block;}
 
-  --text:     #dde0f0;
-  --muted:    #5a5d75;
-  --muted2:   #3a3d52;
+/* ── Lock screen ── */
+#lockScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+.lock-logo{font-family:var(--font-mono);font-size:11px;letter-spacing:5px;color:var(--muted);text-transform:uppercase;margin-bottom:32px;}
+.lock-icon{font-size:48px;margin-bottom:20px;}
+.lock-title{font-family:var(--font-serif);font-size:clamp(22px,5vw,32px);font-weight:700;color:var(--text);letter-spacing:2px;margin-bottom:8px;text-align:center;}
+.lock-sub{font-size:12px;color:var(--muted);margin-bottom:32px;letter-spacing:1px;text-align:center;}
+.lock-box{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:28px 24px;}
+.lock-label{font-family:var(--font-mono);font-size:10px;letter-spacing:2px;color:var(--muted);margin-bottom:12px;text-transform:uppercase;}
+.lock-input{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);font-family:var(--font-mono);
+  font-size:20px;letter-spacing:4px;padding:14px 16px;border-radius:var(--r-sm);outline:none;text-align:center;transition:border-color .2s;}
+.lock-input:focus{border-color:var(--purple);}.lock-input.error{border-color:var(--red);animation:shake .3s;}
+.lock-btn{width:100%;margin-top:14px;padding:14px;background:var(--purple);color:#fff;font-family:var(--font-mono);
+  font-size:13px;font-weight:700;letter-spacing:2px;border:none;border-radius:var(--r-sm);cursor:pointer;transition:opacity .2s,transform .1s;}
+.lock-btn:hover{opacity:.88;}.lock-btn:active{transform:scale(.98);}
+.lock-err{margin-top:10px;font-size:12px;color:var(--red);text-align:center;min-height:18px;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 
-  --green:    #22c55e;
-  --green-dim:#0d2b1a;
-  --green-b:  #1a4a2a;
+/* ── Main ── */
+#mainScreen{position:relative;z-index:1;}
+.mission-banner{max-width:900px;margin:0 auto 0;padding:0 20px 16px;display:none;}
+.mission-inner{background:linear-gradient(135deg,rgba(107,159,255,.12),rgba(160,122,255,.08));
+  border:1px solid rgba(107,159,255,.3);border-left:3px solid var(--blue);border-radius:var(--r-sm);
+  padding:12px 16px;display:flex;align-items:flex-start;gap:12px;}
+.mission-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.mission-body{flex:1;}
+.mission-label{font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:var(--blue);text-transform:uppercase;margin-bottom:4px;}
+.mission-text{font-size:12px;color:var(--text);line-height:1.6;}
+.mission-dismiss{font-size:16px;color:var(--muted);cursor:pointer;flex-shrink:0;line-height:1;padding:2px;}
+.mission-dismiss:hover{color:var(--text);}
 
-  --blue:     #6b9fff;
-  --blue-dim: #0d1a2e;
+.site-header{padding:28px 20px 16px;max-width:900px;margin:0 auto;position:relative;}
+.site-eyebrow{font-family:var(--font-mono);font-size:10px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+.site-title{font-family:var(--font-serif);font-size:clamp(24px,5.5vw,40px);font-weight:700;color:var(--text);letter-spacing:1px;line-height:1.1;}
+.site-title .year{color:var(--amber);font-size:.7em;letter-spacing:2px;}
+.site-tagline{margin-top:5px;font-size:12px;color:var(--muted);letter-spacing:1px;}
+.site-meta{margin-top:5px;font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:1px;}
+.header-auth-badge{position:absolute;top:28px;right:20px;display:flex;align-items:center;gap:8px;}
+.auth-dot{width:8px;height:8px;border-radius:50%;background:var(--muted2);box-shadow:0 0 6px var(--muted2);}
+.auth-dot.unlocked{background:var(--green);box-shadow:0 0 8px var(--green);}
+.auth-dot.admin{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+.auth-label{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:1px;}
+.logout-btn{font-family:var(--font-mono);font-size:10px;color:var(--muted);background:none;
+  border:1px solid var(--border2);padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:1px;transition:all .2s;}
+.logout-btn:hover{color:var(--red);border-color:var(--red);}
 
-  --purple:   #a07aff;
-  --purple-dim:#1a1030;
+.announcement-bar{max-width:900px;margin:0 auto 16px;padding:0 20px;}
+.announcement{background:linear-gradient(135deg,var(--amber-dim),rgba(42,26,8,.5));
+  border:1px solid rgba(240,168,74,.3);border-left:3px solid var(--amber);
+  border-radius:var(--r-sm);padding:12px 16px;font-size:13px;color:var(--amber);line-height:1.6;}
+.announcement-date{float:right;font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-left:12px;}
 
-  --amber:    #f0a84a;
-  --amber-dim:#2a1a08;
+.categories-wrap{max-width:900px;margin:0 auto;padding:0 20px 60px;}
+.category-section{margin-bottom:36px;}
+.category-header{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border2);}
+.cat-icon{font-size:18px;}
+.cat-title{font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+.cat-title-zh{font-family:var(--font-body);font-size:14px;font-weight:700;color:var(--text);}
+.cat-count{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--muted);
+  background:var(--surface);border:1px solid var(--border2);padding:2px 8px;border-radius:10px;}
+.command-locked-notice{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:2px;
+  margin-bottom:12px;padding:8px 12px;background:rgba(160,122,255,.05);
+  border:1px dashed rgba(160,122,255,.2);border-radius:var(--r-sm);}
 
-  --red:      #ef4444;
-  --red-dim:  #2a0a0a;
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.artifact-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);
+  padding:18px 16px 16px;position:relative;overflow:hidden;cursor:pointer;
+  transition:border-color .2s,transform .15s,box-shadow .2s;text-decoration:none;color:inherit;display:block;}
+.artifact-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.5);}
+.artifact-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:.6;transition:opacity .2s;}
+.artifact-card:hover::before{opacity:1;}
+.artifact-card[data-cat="vocab"]::before    {background:linear-gradient(90deg,transparent,#22c55e,transparent);}
+.artifact-card[data-cat="strategy"]::before {background:linear-gradient(90deg,transparent,#6b9fff,transparent);}
+.artifact-card[data-cat="analysis"]::before {background:linear-gradient(90deg,transparent,#f0a84a,transparent);}
+.artifact-card[data-cat="command"]::before  {background:linear-gradient(90deg,transparent,#a07aff,transparent);}
+.artifact-card[data-cat="vocab"]:hover    {border-color:rgba(34,197,94,.4);}
+.artifact-card[data-cat="strategy"]:hover {border-color:rgba(107,159,255,.4);}
+.artifact-card[data-cat="analysis"]:hover {border-color:rgba(240,168,74,.4);}
+.artifact-card[data-cat="command"]:hover  {border-color:rgba(160,122,255,.4);}
 
-  --cyan:     #22d3ee;
+.artifact-card.weak-highlight{
+  border-color:rgba(240,168,74,.5)!important;
+  box-shadow:0 0 0 1px rgba(240,168,74,.2),0 0 20px rgba(240,168,74,.08)!important;
+  animation:weakPulse 2.5s ease-in-out infinite;}
+@keyframes weakPulse{
+  0%,100%{box-shadow:0 0 0 1px rgba(240,168,74,.2),0 0 20px rgba(240,168,74,.08);}
+  50%{box-shadow:0 0 0 1px rgba(240,168,74,.5),0 0 30px rgba(240,168,74,.2);}}
 
-  --font-mono: 'Space Mono', monospace;
-  --font-body: 'Noto Sans TC', sans-serif;
-  --font-serif:'Noto Serif TC', serif;
+.card-icon{font-size:22px;margin-bottom:10px;}
+.card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.3;}
+.card-desc{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px;}
+.card-footer{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.diff-badge{font-family:var(--font-mono);font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:4px;border:1px solid;}
+.diff-badge.Beginner    {color:var(--green);border-color:var(--green-b);background:var(--green-dim);}
+.diff-badge.Intermediate{color:var(--blue);border-color:rgba(107,159,255,.3);background:var(--blue-dim);}
+.diff-badge.Advanced    {color:var(--purple);border-color:rgba(160,122,255,.3);background:var(--purple-dim);}
+.external-badge{font-family:var(--font-mono);font-size:9px;color:var(--cyan);
+  border:1px solid rgba(34,211,238,.3);background:rgba(34,211,238,.08);padding:2px 7px;border-radius:4px;letter-spacing:1px;}
+.skill-tag{font-size:9px;color:var(--muted);background:var(--surface);border:1px solid var(--border2);padding:2px 6px;border-radius:4px;}
+.time-badge{font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-left:auto;white-space:nowrap;}
+.priority-badge{position:absolute;top:12px;right:12px;font-size:9px;font-family:var(--font-mono);
+  letter-spacing:.5px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,#f97316,#ef4444);
+  padding:3px 8px;border-radius:20px;box-shadow:0 2px 8px rgba(239,68,68,.4);
+  white-space:nowrap;animation:pulseGlow 2.5s ease-in-out infinite;}
+@keyframes pulseGlow{0%,100%{box-shadow:0 2px 8px rgba(239,68,68,.4);}50%{box-shadow:0 2px 16px rgba(249,115,22,.7);}}
+.weak-badge{position:absolute;top:12px;right:12px;font-size:9px;font-family:var(--font-mono);
+  letter-spacing:.5px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,#f0a84a,#f97316);
+  padding:3px 8px;border-radius:20px;white-space:nowrap;}
+.lock-overlay{position:absolute;inset:0;background:rgba(9,9,12,.75);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;border-radius:var(--r-card);backdrop-filter:blur(2px);}
+.lock-overlay-icon{font-size:28px;}
+.lock-overlay-text{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:2px;}
 
-  --r-card: 14px;
-  --r-sm:   8px;
+/* ── Modal ── */
+.modal-backdrop{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.8);
+  backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;}
+.modal-backdrop.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);
+  padding:28px 24px;width:100%;max-width:340px;box-shadow:var(--shadow);}
+.modal-title{font-family:var(--font-mono);font-size:11px;letter-spacing:3px;color:var(--purple);text-transform:uppercase;margin-bottom:16px;}
+.modal-desc{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+.modal-field{margin-bottom:14px;}
+.modal-field-label{font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;}
+.modal select,.modal input[type=number]{width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);
+  font-family:var(--font-mono);font-size:16px;padding:12px 14px;border-radius:var(--r-sm);outline:none;transition:border-color .2s;appearance:none;}
+.modal input[type=number]{font-size:22px;letter-spacing:8px;text-align:center;}
+.modal select:focus,.modal input:focus{border-color:var(--purple);}
+.modal input.error{border-color:var(--red);animation:shake .3s;}
+.modal select option{background:var(--surface);}
+.modal-actions{display:flex;gap:10px;margin-top:4px;}
+.modal-btn{flex:1;padding:12px;font-family:var(--font-mono);font-size:12px;letter-spacing:1px;
+  border-radius:var(--r-sm);cursor:pointer;border:none;transition:opacity .2s;}
+.modal-btn.primary{background:var(--purple);color:#fff;}
+.modal-btn.secondary{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.modal-btn:hover{opacity:.85;}
+.modal-err{margin-top:8px;font-size:11px;color:var(--red);min-height:16px;}
 
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
-}
+.site-footer{max-width:900px;margin:0 auto;padding:24px 20px;border-top:1px solid var(--border2);text-align:center;}
+.footer-copy{font-family:var(--font-mono);font-size:10px;color:var(--muted2);letter-spacing:.5px;line-height:1.8;}
+#loadingScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.loader-ring{width:40px;height:40px;border:2px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loader-text{font-family:var(--font-mono);font-size:11px;color:var(--muted);letter-spacing:3px;}
+@media(max-width:480px){.cards-grid{grid-template-columns:1fr;}.header-auth-badge{position:static;margin-top:12px;}}
+.fade-in{animation:fadeIn .4s ease both;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.fade-in-delay-1{animation-delay:.05s;}.fade-in-delay-2{animation-delay:.10s;}
+.fade-in-delay-3{animation-delay:.15s;}.fade-in-delay-4{animation-delay:.20s;}
 
-/* ════════════════════════════════════════
-   RESET + BASE
-════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body);
-  min-height: 100vh;
-  overflow-x: hidden;
+/* ── Student weakness banner ── */
+.weakness-banner{
+  margin-bottom:14px;padding:12px 16px;
+  background:linear-gradient(135deg,rgba(248,113,113,.08),rgba(249,115,22,.06));
+  border:1px solid rgba(248,113,113,.25);border-left:3px solid var(--red);
+  border-radius:var(--r-sm);display:flex;align-items:flex-start;gap:10px;
 }
-
-/* scanline overlay */
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent, transparent 2px,
-    rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
-  );
-}
-
-/* ════════════════════════════════════════
-   SCREENS
-════════════════════════════════════════ */
-.screen { display: none; }
-.screen.active { display: block; }
-
-/* ════════════════════════════════════════
-   GLOBAL LOCK SCREEN
-════════════════════════════════════════ */
-#lockScreen {
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 24px;
-}
-.lock-logo {
-  font-family: var(--font-mono);
-  font-size: 11px; letter-spacing: 5px;
-  color: var(--muted); text-transform: uppercase;
-  margin-bottom: 32px;
-}
-.lock-icon { font-size: 48px; margin-bottom: 20px; }
-.lock-title {
-  font-family: var(--font-serif);
-  font-size: clamp(22px, 5vw, 32px);
-  font-weight: 700; color: var(--text);
-  letter-spacing: 2px; margin-bottom: 8px; text-align: center;
-}
-.lock-sub {
-  font-size: 12px; color: var(--muted);
-  margin-bottom: 32px; letter-spacing: 1px; text-align: center;
-}
-.lock-box {
-  width: 100%; max-width: 360px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  padding: 28px 24px;
-}
-.lock-label {
-  font-family: var(--font-mono);
-  font-size: 10px; letter-spacing: 2px;
-  color: var(--muted); margin-bottom: 12px;
-  text-transform: uppercase;
-}
-.lock-input {
-  width: 100%;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 20px; letter-spacing: 4px;
-  padding: 14px 16px;
-  border-radius: var(--r-sm);
-  outline: none;
-  text-align: center;
-  transition: border-color 0.2s;
-}
-.lock-input:focus { border-color: var(--purple); }
-.lock-input.error { border-color: var(--red); animation: shake 0.3s; }
-.lock-btn {
-  width: 100%; margin-top: 14px;
-  padding: 14px;
-  background: var(--purple);
-  color: #fff;
-  font-family: var(--font-mono);
-  font-size: 13px; font-weight: 700;
-  letter-spacing: 2px;
-  border: none; border-radius: var(--r-sm);
-  cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
-}
-.lock-btn:hover { opacity: 0.88; }
-.lock-btn:active { transform: scale(0.98); }
-.lock-err {
-  margin-top: 10px; font-size: 12px;
-  color: var(--red); text-align: center;
-  min-height: 18px;
-}
-
-@keyframes shake {
-  0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
-}
-
-/* ════════════════════════════════════════
-   MAIN SCREEN
-════════════════════════════════════════ */
-#mainScreen { position: relative; z-index: 1; }
-
-/* ── Header ── */
-.site-header {
-  padding: 28px 20px 20px;
-  max-width: 900px; margin: 0 auto;
-  position: relative;
-}
-.site-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 10px; letter-spacing: 4px;
-  color: var(--muted); text-transform: uppercase;
-  margin-bottom: 8px;
-}
-.site-title {
-  font-family: var(--font-serif);
-  font-size: clamp(22px, 5vw, 36px);
-  font-weight: 700; color: var(--text);
-  letter-spacing: 2px;
-  line-height: 1.1;
-}
-.site-title span { color: var(--purple); }
-.site-meta {
-  margin-top: 6px;
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted);
-  letter-spacing: 1px;
-}
-.header-auth-badge {
-  position: absolute; top: 28px; right: 20px;
-  display: flex; align-items: center; gap: 8px;
-}
-.auth-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--muted2);
-  box-shadow: 0 0 6px var(--muted2);
-}
-.auth-dot.unlocked { background: var(--green); box-shadow: 0 0 8px var(--green); }
-.auth-dot.admin    { background: var(--amber);  box-shadow: 0 0 8px var(--amber); }
-.auth-label {
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted); letter-spacing: 1px;
-}
-.logout-btn {
-  font-family: var(--font-mono); font-size: 10px;
-  color: var(--muted); background: none;
-  border: 1px solid var(--border2);
-  padding: 4px 10px; border-radius: 4px;
-  cursor: pointer; letter-spacing: 1px;
-  transition: all 0.2s;
-}
-.logout-btn:hover { color: var(--red); border-color: var(--red); }
-
-/* ── Announcement ── */
-.announcement-bar {
-  max-width: 900px; margin: 0 auto 20px;
-  padding: 0 20px;
-}
-.announcement {
-  background: linear-gradient(135deg, var(--amber-dim), rgba(42,26,8,0.5));
-  border: 1px solid rgba(240,168,74,0.3);
-  border-left: 3px solid var(--amber);
-  border-radius: var(--r-sm);
-  padding: 12px 16px;
-  font-size: 13px; color: var(--amber);
-  line-height: 1.6;
-}
-.announcement-date {
-  float: right;
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted);
-  margin-left: 12px;
-}
-
-/* ── Category sections ── */
-.categories-wrap {
-  max-width: 900px; margin: 0 auto;
-  padding: 0 20px 60px;
-}
-.category-section { margin-bottom: 36px; }
-.category-header {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 16px; padding-bottom: 10px;
-  border-bottom: 1px solid var(--border2);
-}
-.cat-icon { font-size: 18px; }
-.cat-title {
-  font-family: var(--font-mono);
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 2px; text-transform: uppercase;
-}
-.cat-title-zh {
-  font-family: var(--font-body);
-  font-size: 14px; font-weight: 700;
-  color: var(--text);
-}
-.cat-count {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  padding: 2px 8px; border-radius: 10px;
-}
-
-/* ── Cards grid ── */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
-}
-.artifact-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  padding: 18px 16px 16px;
-  position: relative; overflow: hidden;
-  cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
-  text-decoration: none; color: inherit;
-  display: block;
-}
-.artifact-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-}
-.artifact-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-}
-.artifact-card:hover::before { opacity: 1; }
-
-/* card colour accents per category */
-.artifact-card[data-cat="vocab"]::before    { background: linear-gradient(90deg, transparent, #22c55e, transparent); }
-.artifact-card[data-cat="strategy"]::before { background: linear-gradient(90deg, transparent, #6b9fff, transparent); }
-.artifact-card[data-cat="command"]::before  { background: linear-gradient(90deg, transparent, #a07aff, transparent); }
-
-.artifact-card[data-cat="vocab"]:hover    { border-color: rgba(34,197,94,0.4); }
-.artifact-card[data-cat="strategy"]:hover { border-color: rgba(107,159,255,0.4); }
-.artifact-card[data-cat="command"]:hover  { border-color: rgba(160,122,255,0.4); }
-
-.card-icon { font-size: 22px; margin-bottom: 10px; }
-.card-title {
-  font-size: 14px; font-weight: 700;
-  color: var(--text); margin-bottom: 6px;
-  line-height: 1.3;
-}
-.card-desc {
-  font-size: 11px; color: var(--muted);
-  line-height: 1.6; margin-bottom: 12px;
-}
-.card-footer {
-  display: flex; align-items: center; gap: 6px;
-  flex-wrap: wrap;
-}
-.diff-badge {
-  font-family: var(--font-mono);
-  font-size: 9px; letter-spacing: 1px;
-  padding: 2px 7px; border-radius: 4px;
-  border: 1px solid;
-}
-.diff-badge.Beginner      { color: var(--green); border-color: var(--green-b); background: var(--green-dim); }
-.diff-badge.Intermediate  { color: var(--blue);  border-color: rgba(107,159,255,0.3); background: var(--blue-dim); }
-.diff-badge.Advanced      { color: var(--purple);border-color: rgba(160,122,255,0.3); background: var(--purple-dim); }
-
-.external-badge {
-  font-family: var(--font-mono);
-  font-size: 9px; color: var(--cyan);
-  border: 1px solid rgba(34,211,238,0.3);
-  background: rgba(34,211,238,0.08);
-  padding: 2px 7px; border-radius: 4px;
-  letter-spacing: 1px;
-}
-.skill-tag {
-  font-size: 9px; color: var(--muted);
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  padding: 2px 6px; border-radius: 4px;
-}
-
-/* private locked card state */
-.artifact-card.is-locked {
-  cursor: default;
-  opacity: 0.6;
-  pointer-events: none;
-}
-.artifact-card.is-locked-unlockable {
-  cursor: pointer;
-  opacity: 0.75;
-}
-.lock-overlay {
-  position: absolute; inset: 0;
-  background: rgba(9,9,12,0.7);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 6px; border-radius: var(--r-card);
-  backdrop-filter: blur(2px);
-}
-.lock-overlay-icon { font-size: 28px; }
-.lock-overlay-text {
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted);
-  letter-spacing: 2px;
-}
-
-/* ── Individual lock modal ── */
-.modal-backdrop {
-  display: none;
-  position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(4px);
-  align-items: center; justify-content: center;
-  padding: 20px;
-}
-.modal-backdrop.open { display: flex; }
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  padding: 28px 24px;
-  width: 100%; max-width: 340px;
-  box-shadow: var(--shadow);
-}
-.modal-title {
-  font-family: var(--font-mono);
-  font-size: 11px; letter-spacing: 3px;
-  color: var(--purple); text-transform: uppercase;
-  margin-bottom: 16px;
-}
-.modal-desc {
-  font-size: 13px; color: var(--muted);
-  margin-bottom: 20px; line-height: 1.6;
-}
-.modal input {
-  width: 100%; background: var(--bg2);
-  border: 1px solid var(--border); color: var(--text);
-  font-family: var(--font-mono); font-size: 22px;
-  letter-spacing: 8px; padding: 14px; border-radius: var(--r-sm);
-  outline: none; text-align: center;
-  transition: border-color 0.2s;
-}
-.modal input:focus { border-color: var(--purple); }
-.modal input.error { border-color: var(--red); animation: shake 0.3s; }
-.modal-actions { display: flex; gap: 10px; margin-top: 14px; }
-.modal-btn {
-  flex: 1; padding: 12px;
-  font-family: var(--font-mono); font-size: 12px;
-  letter-spacing: 1px; border-radius: var(--r-sm);
-  cursor: pointer; border: none;
-  transition: opacity 0.2s;
-}
-.modal-btn.primary { background: var(--purple); color: #fff; }
-.modal-btn.secondary { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
-.modal-btn:hover { opacity: 0.85; }
-.modal-err { margin-top: 8px; font-size: 11px; color: var(--red); min-height: 16px; }
-
-/* ── Footer ── */
-.site-footer {
-  max-width: 900px; margin: 0 auto;
-  padding: 24px 20px;
-  border-top: 1px solid var(--border2);
-  text-align: center;
-}
-.footer-copy {
-  font-family: var(--font-mono);
-  font-size: 10px; color: var(--muted2);
-  letter-spacing: 0.5px; line-height: 1.8;
-}
-
-/* ── Priority badge ── */
-.priority-badge {
-  position: absolute; top: 12px; right: 12px;
-  font-size: 9px; font-family: var(--font-mono);
-  letter-spacing: 0.5px; font-weight: 700;
-  color: #fff;
-  background: linear-gradient(135deg, #f97316, #ef4444);
-  padding: 3px 8px; border-radius: 20px;
-  box-shadow: 0 2px 8px rgba(239,68,68,0.4);
-  white-space: nowrap;
-  animation: pulseGlow 2.5s ease-in-out infinite;
-}
-@keyframes pulseGlow {
-  0%,100% { box-shadow: 0 2px 8px rgba(239,68,68,0.4); }
-  50%      { box-shadow: 0 2px 16px rgba(249,115,22,0.7); }
-}
-
-/* ── Time badge ── */
-.time-badge {
-  font-family: var(--font-mono);
-  font-size: 9px; color: var(--muted);
-  margin-left: auto;
-  white-space: nowrap;
-}
-#loadingScreen {
-  min-height: 100vh;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 16px;
-}
-.loader-ring {
-  width: 40px; height: 40px;
-  border: 2px solid var(--border);
-  border-top-color: var(--purple);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.loader-text {
-  font-family: var(--font-mono);
-  font-size: 11px; color: var(--muted);
-  letter-spacing: 3px;
-}
-
-/* ── Responsive ── */
-@media (max-width: 480px) {
-  .cards-grid { grid-template-columns: 1fr; }
-  .header-auth-badge { position: static; margin-top: 12px; }
-}
-
-/* ── Fade in ── */
-.fade-in {
-  animation: fadeIn 0.4s ease both;
-}
-@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.fade-in-delay-1 { animation-delay: 0.05s; }
-.fade-in-delay-2 { animation-delay: 0.10s; }
-.fade-in-delay-3 { animation-delay: 0.15s; }
-.fade-in-delay-4 { animation-delay: 0.20s; }
+.weakness-banner-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.weakness-banner-body{flex:1;}
+.weakness-banner-label{font-family:var(--font-mono);font-size:9px;letter-spacing:3px;
+  color:var(--red);text-transform:uppercase;margin-bottom:4px;}
+.weakness-banner-text{font-size:12px;color:var(--text);line-height:1.6;}
+.weakness-banner-text strong{color:var(--amber);}
 </style>
 </head>
 <body>
-
-<!-- ════ LOADING ════ -->
 <div id="loadingScreen" class="screen active">
   <div class="loader-ring"></div>
   <div class="loader-text">INITIALIZING...</div>
 </div>
 
-<!-- ════ GLOBAL LOCK ════ -->
 <div id="lockScreen" class="screen">
-  <div class="lock-logo">501 · LEARNING OS</div>
+  <div class="lock-logo">龍津英文 · LEARNING OS</div>
   <div class="lock-icon">🔒</div>
-  <div class="lock-title" id="lockTitle">501 戰略指揮部</div>
+  <div class="lock-title" id="lockTitle">迎戰學測 2027</div>
   <div class="lock-sub">ACCESS RESTRICTED — ENTER PASSPHRASE</div>
   <div class="lock-box">
     <div class="lock-label">系統密鑰 / MASTER KEY</div>
-    <input class="lock-input" id="globalPassInput" type="password"
-           maxlength="32" autocomplete="off" placeholder="••••••••"
-           autofocus>
+    <input class="lock-input" id="globalPassInput" type="password" maxlength="32" autocomplete="off" placeholder="••••••••" autofocus>
     <button class="lock-btn" onclick="verifyGlobalLock()">解鎖 UNLOCK</button>
     <div class="lock-err" id="globalLockErr"></div>
   </div>
 </div>
 
-<!-- ════ MAIN ════ -->
 <div id="mainScreen" class="screen">
   <header class="site-header fade-in">
-    <div class="site-eyebrow" id="siteEyebrow">LEARNING OS v2.0</div>
-    <div class="site-title"><span id="siteTitleSpan">501</span> 戰略指揮部</div>
+    <div class="site-eyebrow" id="siteEyebrow">龍津英文・決戰系統</div>
+    <div class="site-title">迎戰學測 <span class="year">2027</span></div>
+    <div class="site-tagline">龍津高中 · 英文科戰略平台</div>
     <div class="site-meta" id="siteMeta"></div>
     <div class="header-auth-badge" id="authBadge" style="display:none">
       <div class="auth-dot" id="authDot"></div>
@@ -530,92 +227,104 @@ body::before {
       <button class="logout-btn" onclick="logout()">登出</button>
     </div>
   </header>
-
+  <div class="mission-banner" id="missionBanner">
+    <div class="mission-inner">
+      <div class="mission-icon">🎯</div>
+      <div class="mission-body">
+        <div class="mission-label">TODAY'S MISSION · 今日推薦任務</div>
+        <div class="mission-text" id="missionText"></div>
+      </div>
+      <div class="mission-dismiss" onclick="dismissMission()" title="關閉">×</div>
+    </div>
+  </div>
   <div class="announcement-bar">
     <div class="announcement" id="announcement"></div>
   </div>
-
   <main class="categories-wrap" id="categoriesWrap"></main>
-
   <footer class="site-footer">
     <div class="footer-copy" id="footerCopy"></div>
   </footer>
 </div>
 
-<!-- ════ INDIVIDUAL LOCK MODAL ════ -->
 <div class="modal-backdrop" id="modalBackdrop" onclick="closeModalIfOutside(event)">
   <div class="modal">
-    <div class="modal-title">🔐 身分驗證</div>
-    <div class="modal-desc">請輸入您的<strong style="color:var(--text)">身分證後三碼</strong>以解鎖個人資料</div>
-    <input id="idInput" type="number" maxlength="3" max="999" min="0"
-           placeholder="000" autocomplete="off"
-           oninput="limitThree(this)"
-           onkeydown="if(event.key==='Enter') verifyIndividual()">
+    <div class="modal-title">🔐 導班戰略室驗證</div>
+    <div class="modal-desc">選擇座號，輸入身分證後四碼</div>
+    <div class="modal-field">
+      <div class="modal-field-label">座號 Seat No.</div>
+      <select id="seatSelect"><option value="">— 請選擇 —</option></select>
+    </div>
+    <div class="modal-field">
+      <div class="modal-field-label">身分證後四碼 ID Tail</div>
+      <input id="idInput" type="number" maxlength="4" max="9999" min="0"
+             placeholder="0000" autocomplete="off"
+             oninput="limitFour(this)"
+             onkeydown="if(event.key==='Enter') verifyIndividual()">
+    </div>
     <div class="modal-actions">
       <button class="modal-btn secondary" onclick="closeModal()">取消</button>
-      <button class="modal-btn primary" onclick="verifyIndividual()">驗證</button>
+      <button class="modal-btn primary"   onclick="verifyIndividual()">驗證</button>
     </div>
     <div class="modal-err" id="modalErr"></div>
   </div>
 </div>
 
-<!-- ════ SCRIPT ════ -->
 <script>
-// ─────────────────────────────────────
-//  STATE
-// ─────────────────────────────────────
-let NAV = null;
-let AUTH = {
-  state: 'guest',   // 'guest' | 'individual' | 'admin'
-  idHash: null
-};
+// ══ STATE ══
+let NAV = null, STUDENTS = null;
+let AUTH = { state:'guest', seat:null, name:null };
+const WEAKNESS_KEY = 'ljos_weakness';
 
-// ─────────────────────────────────────
-//  BOOT
-// ─────────────────────────────────────
+// ── Student weakness module state ──
+let _weaknessSections = null;  // merged sections object  {key: pct, ...}
+let _weaknessLoaded   = false; // fetch attempted flag
+
+// ══ BOOT ══
 window.addEventListener('DOMContentLoaded', async () => {
-  // Restore session
   const saved = sessionStorage.getItem('auth501');
-  if (saved) {
-    try { AUTH = JSON.parse(saved); } catch(e) {}
-  }
+  if (saved) { try { AUTH = JSON.parse(saved); } catch(e){} }
 
   try {
-    const res = await fetch('nav.json?v=' + Date.now());
-    if (!res.ok) throw new Error('nav.json not found');
-    NAV = await res.json();
+    const navRes = await fetch('./nav.json?v=' + Date.now());
+    if (!navRes.ok) throw new Error('nav.json missing');
+    NAV = await navRes.json();
   } catch(e) {
-    showError('無法載入 nav.json，請確認檔案已上傳。');
-    return;
+    showError('無法載入 nav.json：' + e.message); return;
   }
+
+  // students.json is optional — never block render
+  try {
+    const stuRes = await fetch('./data/students.json?v=' + Date.now());
+    if (stuRes.ok) STUDENTS = await stuRes.json();
+  } catch(e) { console.warn('students.json not loaded:', e.message); }
+
+  // ── Student weakness fetch (only when role === 'individual') ──
+  // Runs after students.json is already loaded into STUDENTS.
+  const _bootRole = sessionStorage.getItem('role');
+  const _bootSid  = sessionStorage.getItem('student_id');
+  if (_bootRole === 'individual' && _bootSid && !_weaknessLoaded) {
+    _weaknessLoaded = true;
+    loadStudentWeakness(_bootSid).catch(e => console.warn('weakness load failed:', e));
+  }
+
+  document.title = NAV.site_config.site_title || '迎戰學測 2027';
+  populateSeatSelect();
 
   const cfg = NAV.site_config;
-
-  // Update page title
-  document.title = cfg.site_title || '501 戰略指揮部';
-
-  // Global lock check
-  if (cfg.is_global_locked && cfg.master_password_hash) {
-    // Already passed global lock this session?
-    if (!sessionStorage.getItem('globalUnlocked')) {
-      showScreen('lockScreen');
-      document.getElementById('lockTitle').textContent = cfg.site_title;
-      document.getElementById('globalPassInput').focus();
-      return;
-    }
+  if (cfg.is_global_locked && cfg.master_password_hash && !sessionStorage.getItem('globalUnlocked')) {
+    showScreen('lockScreen');
+    document.getElementById('lockTitle').textContent = cfg.site_title;
+    document.getElementById('globalPassInput').focus();
+    return;
   }
-
   renderMain();
 });
 
-// ─────────────────────────────────────
-//  SCREENS
-// ─────────────────────────────────────
+// ══ SCREENS ══
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
-
 function showError(msg) {
   document.getElementById('loadingScreen').innerHTML =
     `<div style="text-align:center;padding:40px 20px">
@@ -624,284 +333,332 @@ function showError(msg) {
      </div>`;
 }
 
-// ─────────────────────────────────────
-//  GLOBAL LOCK
-// ─────────────────────────────────────
+// ══ GLOBAL LOCK ══
 async function verifyGlobalLock() {
   const input = document.getElementById('globalPassInput');
   const errEl = document.getElementById('globalLockErr');
-  const val = input.value.trim();
-  if (!val) return;
-
-  const hash = await sha256(val);
-  const cfg = NAV.site_config;
-
-  // Check admin
+  const val = input.value.trim(); if(!val) return;
+  const hash = await sha256(val), cfg = NAV.site_config;
   if (cfg.admin_hash && hash === cfg.admin_hash) {
-    AUTH = { state: 'admin', idHash: null };
-    saveAuth();
-    sessionStorage.setItem('globalUnlocked', '1');
-    renderMain();
-    return;
+    AUTH = {state:'admin',seat:null,name:'管理員'};
+    saveAuth(); sessionStorage.setItem('globalUnlocked','1'); renderMain(); return;
   }
-
-  if (hash === cfg.master_password_hash) {
-    sessionStorage.setItem('globalUnlocked', '1');
-    renderMain();
-    return;
+  if (cfg.master_password_hash && hash === cfg.master_password_hash) {
+    sessionStorage.setItem('globalUnlocked','1'); renderMain(); return;
   }
-
-  input.classList.add('error');
-  setTimeout(() => input.classList.remove('error'), 500);
-  errEl.textContent = '密鑰錯誤，請再試一次';
+  input.classList.add('error'); setTimeout(()=>input.classList.remove('error'),500);
+  errEl.textContent='密鑰錯誤，請再試一次';
 }
+document.getElementById('globalPassInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')verifyGlobalLock();});
 
-document.getElementById('globalPassInput')?.addEventListener('keydown', e => {
-  if (e.key === 'Enter') verifyGlobalLock();
-});
-
-// ─────────────────────────────────────
-//  RENDER MAIN
-// ─────────────────────────────────────
+// ══ RENDER MAIN ══
 function renderMain() {
   showScreen('mainScreen');
   const cfg = NAV.site_config;
-
-  // Header
-  document.getElementById('siteEyebrow').textContent = cfg.site_subtitle || 'LEARNING OS';
-  document.getElementById('siteTitleSpan').textContent = cfg.site_title?.split(' ')[0] || '501';
-  document.getElementById('siteMeta').textContent =
-    `LAST UPDATE: ${cfg.last_update || '—'}`;
-
-  // Auth badge
+  document.getElementById('siteEyebrow').textContent = cfg.site_subtitle || '龍津英文・決戰系統';
+  document.getElementById('siteMeta').textContent = 'LAST UPDATE: ' + (cfg.last_update||'—');
   updateAuthBadge();
 
-  // Announcement
   const annEl = document.getElementById('announcement');
   if (cfg.announcement) {
-    const dateStr = cfg.last_update ? `<span class="announcement-date">${cfg.last_update}</span>` : '';
-    annEl.innerHTML = dateStr + cfg.announcement;
+    const d = cfg.last_update ? `<span class="announcement-date">${cfg.last_update}</span>` : '';
+    annEl.innerHTML = d + cfg.announcement;
     annEl.parentElement.style.display = '';
-  } else {
-    annEl.parentElement.style.display = 'none';
-  }
+  } else { annEl.parentElement.style.display = 'none'; }
 
-  // Footer
   document.getElementById('footerCopy').innerHTML =
-    (cfg.footer_copyright || '') + '<br>本系統之數據邏輯、分析架構及教案資源受著作權法保護。未經授權之複製、修改或轉載，將依法追究法律責任。';
+    (cfg.footer_copyright||'') + '<br>本系統之數據邏輯、分析架構及教案資源受著作權法保護。未經授權之複製、修改或轉載，將依法追究法律責任。';
 
-  // Categories + cards
+  renderMissionBanner();
+
+  // ── Determine role from sessionStorage (flat keys) ──
+  const ssRole = sessionStorage.getItem('role');   // 'individual' | 'admin' | null
+  const isStudent = ssRole === 'individual';
+  const isAdmin   = ssRole === 'admin';
+
+  // Legacy support: also accept AUTH.state from in-page login
+  const authStudent = AUTH.state === 'individual';
+  const authAdmin   = AUTH.state === 'admin';
+  const showStudent = isStudent || authStudent;
+  const showAdmin   = isAdmin   || authAdmin;
+
   const wrap = document.getElementById('categoriesWrap');
   wrap.innerHTML = '';
 
+  // Render order follows categories array order
   NAV.categories.forEach((cat, ci) => {
+    // ── Access gate ──
+    // 'public'  → always show
+    // 'student' → only if showStudent
+    // 'admin'   → only if showAdmin
+    const access = cat.access || 'public';
+    if (access === 'student' && !showStudent) return;
+    if (access === 'admin'   && !showAdmin)   return;
+
     const items = NAV.artifact_registry.filter(a => a.category === cat.id);
     if (!items.length) return;
 
     const section = document.createElement('div');
     section.className = `category-section fade-in fade-in-delay-${Math.min(ci+1,4)}`;
 
+    // Role badge for gated sections
+    let roleBadge = '';
+    if (access === 'student') {
+      roleBadge = `<span style="margin-left:8px;font-family:var(--font-mono);font-size:9px;color:var(--green);letter-spacing:1px">✓ 學生專區</span>`;
+    } else if (access === 'admin') {
+      roleBadge = `<span style="margin-left:8px;font-family:var(--font-mono);font-size:9px;color:var(--amber);letter-spacing:1px">⚡ 教師專用</span>`;
+    }
+
     section.innerHTML = `
       <div class="category-header">
         <span class="cat-icon">${cat.icon}</span>
         <span class="cat-title-zh" style="color:${cat.color}">${cat.label}</span>
-        <span class="cat-title" style="color:${cat.color};opacity:0.5">${cat.label_en}</span>
+        <span class="cat-title" style="color:${cat.color};opacity:.5">${cat.label_en}</span>
+        ${roleBadge}
         <span class="cat-count">${items.length} 項</span>
       </div>
-      <div class="cards-grid" id="grid-${cat.id}"></div>
-    `;
+      <div class="cards-grid" id="grid-${cat.id}"></div>`;
     wrap.appendChild(section);
+    items.forEach(item => section.querySelector(`#grid-${cat.id}`).appendChild(buildCard(item)));
 
-    const grid = section.querySelector(`#grid-${cat.id}`);
-    items.forEach(item => {
-      grid.appendChild(buildCard(item));
-    });
+    // ── Student weakness banner (personal section only) ──
+    if (cat.id === 'personal' && showStudent) {
+      const bannerEl = buildWeaknessBanner();
+      if (bannerEl) {
+        // Insert before the cards-grid so it's prominent
+        const grid = section.querySelector(`#grid-${cat.id}`);
+        section.querySelector('.category-header').after(bannerEl);
+      }
+    }
   });
 }
 
-// ─────────────────────────────────────
-//  BUILD CARD
-// ─────────────────────────────────────
+// ══ MISSION BANNER ══
+function renderMissionBanner() {
+  const banner = document.getElementById('missionBanner');
+  const textEl = document.getElementById('missionText');
+  if (sessionStorage.getItem('missionDismissed')) { banner.style.display='none'; return; }
+  const ws = getWeaknesses();
+  if (!ws.length) { banner.style.display='none'; return; }
+  const sc = (NAV.score_config||[]).find(s=>s.trigger===ws[0]);
+  const lbl = sc ? sc.label : ws[0];
+  textEl.innerHTML = `上次診斷發現 <strong style="color:var(--amber)">${lbl}</strong> 需要加強。共 ${ws.length} 個弱點已標記。`;
+  banner.style.display = 'block';
+}
+function dismissMission() { document.getElementById('missionBanner').style.display='none'; sessionStorage.setItem('missionDismissed','1'); }
+
+function getWeaknesses() {
+  try { const r=JSON.parse(localStorage.getItem(WEAKNESS_KEY)||'[]'); return Array.isArray(r)?r:(r?[r]:[]); } catch(e){ return []; }
+}
+function isWeakCard(item) { const ws=getWeaknesses(); return (item.trigger_condition||[]).some(t=>ws.includes(t)); }
+
+// ══ BUILD CARD ══
 function buildCard(item) {
-  const isPrivate = item.is_private;
-  const isUnlocked = AUTH.state === 'admin' ||
-    (AUTH.state === 'individual' && AUTH.idHash);
-
+  // All access-gated items reach here only if the user has the right role
+  // (renderMain already filters by cat.access). No blur/lock overlay needed.
+  const isWeak = isWeakCard(item);
   const card = document.createElement('a');
-  card.className = 'artifact-card';
-  card.dataset.cat = item.category;
-  card.dataset.id  = item.id;
-
-  const skillTags = (item.target_skills || []).slice(0,2)
-    .map(s => `<span class="skill-tag">${s}</span>`).join('');
-
-  const extBadge = item.is_external
-    ? `<span class="external-badge">↗ 外部</span>` : '';
-
-  const priorityBadge = item.priority === 1
-    ? `<div class="priority-badge">🔥 建議首選</div>` : '';
-
-  const timeBadge = item.estimated_time
-    ? `<span class="time-badge">⏱ ${item.estimated_time}min</span>` : '';
-
-  card.innerHTML = `
-    ${priorityBadge}
-    <div class="card-icon">${item.icon || '📄'}</div>
-    <div class="card-title">${item.title}</div>
-    <div class="card-desc">${item.desc}</div>
-    <div class="card-footer">
-      <span class="diff-badge ${item.difficulty}">${item.difficulty}</span>
-      ${extBadge}
-      ${skillTags}
-      ${timeBadge}
-    </div>
-  `;
-
-  if (isPrivate && !isUnlocked) {
-    // Show lock overlay
-    card.classList.add('artifact-card', 'is-locked-unlockable');
-    card.style.pointerEvents = 'auto';
-    card.style.opacity = '0.7';
-    const overlay = document.createElement('div');
-    overlay.className = 'lock-overlay';
-    overlay.innerHTML = `
-      <div class="lock-overlay-icon">🔐</div>
-      <div class="lock-overlay-text">需要驗證身分</div>
-    `;
-    card.appendChild(overlay);
-    card.addEventListener('click', e => { e.preventDefault(); openModal(); });
+  card.className='artifact-card'; card.dataset.cat=item.category; card.dataset.id=item.id;
+  const skillTags=(item.target_skills||[]).slice(0,2).map(s=>`<span class="skill-tag">${s}</span>`).join('');
+  const extBadge=item.is_external?`<span class="external-badge">↗ 外部</span>`:'';
+  const timeBadge=item.estimated_time?`<span class="time-badge">⏱ ${item.estimated_time}min</span>`:'';
+  let topBadge='';
+  if (isWeak) { topBadge=`<div class="weak-badge">⚠ 弱點加強</div>`; card.classList.add('weak-highlight'); }
+  else if (item.priority===1) topBadge=`<div class="priority-badge">🔥 建議首選</div>`;
+  card.innerHTML=`${topBadge}<div class="card-icon">${item.icon||'📄'}</div>
+    <div class="card-title">${item.title}</div><div class="card-desc">${item.desc}</div>
+    <div class="card-footer"><span class="diff-badge ${item.difficulty}">${item.difficulty}</span>${extBadge}${skillTags}${timeBadge}</div>`;
+  if (item.url && item.url!=='#') {
+    card.href=item.url;
+    if(item.is_external) card.target='_blank';
   } else {
-    // Normal link
-    if (item.url && item.url !== '#') {
-      card.href = item.url;
-      if (item.is_external) card.target = '_blank';
-    } else {
-      card.style.cursor = 'default';
-    }
+    card.style.cursor='default';
   }
-
   return card;
 }
 
-// ─────────────────────────────────────
-//  AUTH BADGE
-// ─────────────────────────────────────
+// ══ AUTH BADGE ══
 function updateAuthBadge() {
-  const badge = document.getElementById('authBadge');
-  const dot   = document.getElementById('authDot');
-  const label = document.getElementById('authLabel');
+  const badge=document.getElementById('authBadge'),dot=document.getElementById('authDot'),label=document.getElementById('authLabel');
 
-  if (AUTH.state === 'admin') {
-    badge.style.display = 'flex';
-    dot.className = 'auth-dot admin';
-    label.textContent = 'ADMIN';
-  } else if (AUTH.state === 'individual') {
-    badge.style.display = 'flex';
-    dot.className = 'auth-dot unlocked';
-    label.textContent = 'VERIFIED';
+  // Read flat sessionStorage keys (set by login pages)
+  // Fall back to in-page AUTH object for global lock flow
+  const ssRole = sessionStorage.getItem('role');
+  const ssName = sessionStorage.getItem('name');
+  const ssSeat = sessionStorage.getItem('seat');
+
+  const effectiveState = ssRole || AUTH.state;
+  const effectiveName  = ssName || AUTH.name;
+
+  if (effectiveState === 'admin') {
+    badge.style.display='flex'; dot.className='auth-dot admin';
+    label.textContent = effectiveName || 'ADMIN';
+  } else if (effectiveState === 'individual') {
+    badge.style.display='flex'; dot.className='auth-dot unlocked';
+    label.textContent = ssSeat ? `座號 ${ssSeat} 已登入` : (AUTH.seat ? `座號 ${AUTH.seat} 已解鎖` : 'VERIFIED');
   } else {
-    badge.style.display = 'none';
+    badge.style.display='none';
   }
 }
-
 function logout() {
-  AUTH = { state: 'guest', idHash: null };
-  saveAuth();
+  // Clear both flat keys and legacy AUTH
+  AUTH = {state:'guest',seat:null,name:null};
+  sessionStorage.removeItem('role');
+  sessionStorage.removeItem('student_id');
+  sessionStorage.removeItem('seat');
+  sessionStorage.removeItem('name');
+  sessionStorage.removeItem('auth501');
+  sessionStorage.removeItem('globalUnlocked');
+  sessionStorage.removeItem('missionDismissed');
   renderMain();
 }
 
-// ─────────────────────────────────────
-//  INDIVIDUAL LOCK MODAL
-// ─────────────────────────────────────
+// ══ MODAL ══
+function populateSeatSelect() {
+  const sel=document.getElementById('seatSelect');
+  const students = STUDENTS?.students || [];
+  const max = students.length || 39;
+  for(let i=1;i<=max;i++){
+    const opt=document.createElement('option'); opt.value=i;
+    const stu=students.find(s=>s.seat===i);
+    opt.textContent=stu?`${i}號 ${stu.name}`:`${i}號`; sel.appendChild(opt);
+  }
+}
 function openModal() {
   document.getElementById('modalBackdrop').classList.add('open');
-  document.getElementById('modalErr').textContent = '';
-  const inp = document.getElementById('idInput');
-  inp.value = '';
-  inp.classList.remove('error');
-  setTimeout(() => inp.focus(), 80);
+  document.getElementById('modalErr').textContent='';
+  const inp=document.getElementById('idInput'); inp.value=''; inp.classList.remove('error');
+  setTimeout(()=>document.getElementById('seatSelect').focus(),80);
 }
-
-function closeModal() {
-  document.getElementById('modalBackdrop').classList.remove('open');
-}
-
-function closeModalIfOutside(e) {
-  if (e.target.id === 'modalBackdrop') closeModal();
-}
-
-function limitThree(el) {
-  const v = el.value.replace(/\D/g,'').slice(0,3);
-  el.value = v;
-  if (v.length === 3) verifyIndividual();
-}
+function closeModal() { document.getElementById('modalBackdrop').classList.remove('open'); }
+function closeModalIfOutside(e) { if(e.target.id==='modalBackdrop')closeModal(); }
+function limitFour(el) { const v=el.value.replace(/\D/g,'').slice(0,4); el.value=v; if(v.length===4)verifyIndividual(); }
 
 async function verifyIndividual() {
-  const inp   = document.getElementById('idInput');
-  const errEl = document.getElementById('modalErr');
-  const raw   = inp.value.trim();   // preserve original for admin password
-  const cfg   = NAV.site_config;
+  const selEl=document.getElementById('seatSelect'),inp=document.getElementById('idInput'),errEl=document.getElementById('modalErr');
+  const raw=inp.value.trim(), cfg=NAV.site_config;
+  errEl.textContent='';
+  if (!raw) { errEl.textContent='請輸入後四碼'; return; }
 
-  if (!raw) { errEl.textContent = '請輸入後三碼'; return; }
-
-  // ── Step 1: Admin passthrough (raw input, no padding) ──
-  // Admin can type their full password here too; hash the raw value first.
-  const rawHash = await sha256(raw);
-  if (cfg.admin_hash && rawHash === cfg.admin_hash) {
-    AUTH = { state: 'admin', idHash: rawHash };
-    saveAuth(); closeModal();
-    renderMain();
-    return;
+  // Admin passthrough (raw full password)
+  const rawHash=await sha256(raw);
+  if (cfg.admin_hash && rawHash===cfg.admin_hash) {
+    AUTH={state:'admin',seat:null,name:'管理員'}; saveAuth(); closeModal(); renderMain(); return;
   }
 
-  // ── Step 2: Student 3-digit ID check ──
-  const padded = raw.padStart(3, '0');
-  if (!/^\d{3}$/.test(padded)) {
-    inp.classList.add('error');
-    setTimeout(() => inp.classList.remove('error'), 500);
-    errEl.textContent = '請輸入三位數字後三碼';
-    return;
+  const seatVal=parseInt(selEl.value);
+  if (!seatVal) { errEl.textContent='請先選擇座號'; return; }
+  const padded=raw.padStart(4,'0');
+  if (!/^\d{4}$/.test(padded)) { inp.classList.add('error'); setTimeout(()=>inp.classList.remove('error'),500); errEl.textContent='請輸入四位數字'; return; }
+
+  const stu=STUDENTS?.students.find(s=>s.seat===seatVal);
+  if (!stu) { errEl.textContent='找不到該座號'; return; }
+
+  const computed=await sha256('501'+stu.id+padded);
+  if (computed===stu.id_tail_hash) {
+    AUTH={state:'individual',seat:seatVal,name:stu.name}; saveAuth(); closeModal(); renderMain();
+  } else {
+    inp.classList.add('error'); setTimeout(()=>inp.classList.remove('error'),500);
+    errEl.textContent='後四碼不符，請再確認';
+  }
+}
+
+// ══ STUDENT WEAKNESS MODULE ══
+// Loads section scores (3-source priority chain) and calculates
+// the two lowest-scoring sections for display in the personal block.
+
+async function loadStudentWeakness(sid) {
+  const SECTION_KEYS = [
+    'listening','vocab','cloze','context',
+    'structure','reading','translation','writing'
+  ];
+
+  // ── Source 1: students.json analysis (already loaded into STUDENTS) ──
+  let primary = null;
+  if (STUDENTS?.students) {
+    const stu = STUDENTS.students.find(s => s.id === sid);
+    if (stu?.analysis) primary = stu.analysis;
+  }
+  const primaryHasData = primary &&
+    Object.values(primary).some(v => v !== null && v !== undefined && v !== 0);
+
+  // ── Source 2: sections_manual (only when primary has no data) ──
+  let manual = null;
+  if (!primaryHasData) {
+    try {
+      const mr = await fetch(`./data/sections_manual/${sid}.json?v=${Date.now()}`);
+      if (mr.ok) {
+        const mData = await mr.json();
+        manual = mData?.records?.at(-1)?.sections ?? null;
+      }
+    } catch(e) { /* safe skip */ }
   }
 
-  const idHash = await sha256(padded);
+  // ── Source 3: exam_row eng_sections — handled by caller if needed;
+  //    here we only use it if explicitly stored in STUDENTS (not fetched) ──
+  //    (exam JSON files are not loaded on the index page, so we skip this source)
 
-  // Try to fetch individual data file (optional — teacher creates these)
+  // ── Merge: primary wins, fall back to manual ──
+  const merged = {};
+  for (const k of SECTION_KEYS) {
+    const v = (primary?.[k] ?? null) ?? (manual?.[k] ?? null);
+    merged[k] = v;
+  }
+
+  // ── Load sections_meta for max scores ──
+  let meta = {};
   try {
-    const res = await fetch(`data/${idHash.slice(0,16)}.json?v=` + Date.now());
-    if (res.ok) {
-      AUTH = { state: 'individual', idHash: idHash };
-      saveAuth(); closeModal();
-      renderMain();
-      return;
-    }
-  } catch (_) { /* no data file is fine */ }
+    const mr = await fetch('./data/sections_meta.json?v=' + Date.now());
+    if (mr.ok) { const d = await mr.json(); meta = d.english || {}; }
+  } catch(e) { /* safe skip */ }
 
-  // Fallback: any valid 3-digit code unlocks private cards
-  // (Teacher controls access by simply not creating the data file for invalid IDs)
-  AUTH = { state: 'individual', idHash: idHash };
-  saveAuth(); closeModal();
-  renderMain();
+  // ── Calculate percentage for each section, ignore null / 0 ──
+  const scored = SECTION_KEYS
+    .map(k => {
+      const raw = merged[k];
+      const max = meta[k] ?? null;
+      if (raw === null || raw === undefined || raw === 0) return null;
+      if (!max) return null;  // can't normalise without meta
+      return { key: k, pct: raw / max };
+    })
+    .filter(Boolean);
+
+  if (!scored.length) { _weaknessSections = null; return; }
+
+  // Sort ascending by pct, take bottom 2
+  scored.sort((a, b) => a.pct - b.pct);
+  _weaknessSections = scored.slice(0, 2).map(s => s.key);
 }
 
-// ─────────────────────────────────────
-//  SHA-256
-// ─────────────────────────────────────
+function buildWeaknessBanner() {
+  if (!_weaknessSections || !_weaknessSections.length) return null;
+
+  const LABELS = {
+    listening:'聽力', vocab:'詞彙',    cloze:'克漏字',  context:'文意選填',
+    structure:'篇章', reading:'閱讀',  translation:'翻譯', writing:'作文'
+  };
+  const names = _weaknessSections.map(k => LABELS[k] || k).join('、');
+
+  const el = document.createElement('div');
+  el.className = 'weakness-banner';
+  el.innerHTML = `
+    <div class="weakness-banner-icon">⚠️</div>
+    <div class="weakness-banner-body">
+      <div class="weakness-banner-label">BATTLE WEAKNESS · 戰鬥弱點</div>
+      <div class="weakness-banner-text">
+        您的戰鬥弱點：<strong>${names}</strong>
+        ── 建議優先練習對應工具以提升得分率
+      </div>
+    </div>`;
+  return el;
+}
+
+// ══ SHA-256 + STORAGE ══
 async function sha256(str) {
-  const buf = await crypto.subtle.digest(
-    'SHA-256',
-    new TextEncoder().encode(str)
-  );
-  return Array.from(new Uint8Array(buf))
-    .map(b => b.toString(16).padStart(2,'0'))
-    .join('');
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-
-// ─────────────────────────────────────
-//  SESSION STORAGE
-// ─────────────────────────────────────
-function saveAuth() {
-  sessionStorage.setItem('auth501', JSON.stringify(AUTH));
-}
+function saveAuth() { sessionStorage.setItem('auth501',JSON.stringify(AUTH)); }
 </script>
 </body>
 </html>
