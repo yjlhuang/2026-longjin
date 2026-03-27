@@ -278,46 +278,50 @@ const WEAKNESS_KEY = 'ljos_weakness';
 // ── Student weakness module state ──
 let _weaknessSections = null;  // merged sections object  {key: pct, ...}
 let _weaknessLoaded   = false; // fetch attempted flag
+let _sectionsMeta     = null;  // cached sections_meta.json .english block
 
 // ══ BOOT ══
 window.addEventListener('DOMContentLoaded', async () => {
+  // Restore legacy auth object
   const saved = sessionStorage.getItem('auth501');
   if (saved) { try { AUTH = JSON.parse(saved); } catch(e){} }
 
+  // PATCH 1+8: All fetches are non-blocking; renderMain() always runs.
   try {
     const navRes = await fetch('./nav.json?v=' + Date.now());
-    if (!navRes.ok) throw new Error('nav.json missing');
-    NAV = await navRes.json();
-  } catch(e) {
-    showError('無法載入 nav.json：' + e.message); return;
-  }
+    if (navRes.ok) NAV = await navRes.json();
+    else console.warn('nav.json missing');
+  } catch(e) { console.warn('nav.json failed:', e.message); }
 
-  // students.json is optional — never block render
   try {
     const stuRes = await fetch('./data/students.json?v=' + Date.now());
     if (stuRes.ok) STUDENTS = await stuRes.json();
-  } catch(e) { console.warn('students.json not loaded:', e.message); }
+    else console.warn('students.json missing');
+  } catch(e) { console.warn('students.json failed:', e.message); }
 
-  // ── Student weakness fetch (only when role === 'individual') ──
-  // Runs after students.json is already loaded into STUDENTS.
-  const _bootRole = sessionStorage.getItem('role');
+  // PATCH 3: role = sessionStorage.role || AUTH.state
+  const _bootRole = sessionStorage.getItem('role') || AUTH.state || null;
   const _bootSid  = sessionStorage.getItem('student_id');
   if (_bootRole === 'individual' && _bootSid && !_weaknessLoaded) {
     _weaknessLoaded = true;
     loadStudentWeakness(_bootSid).catch(e => console.warn('weakness load failed:', e));
   }
 
-  document.title = NAV.site_config.site_title || '迎戰學測 2027';
-  populateSeatSelect();
-
-  const cfg = NAV.site_config;
-  if (cfg.is_global_locked && cfg.master_password_hash && !sessionStorage.getItem('globalUnlocked')) {
-    showScreen('lockScreen');
-    document.getElementById('lockTitle').textContent = cfg.site_title;
-    document.getElementById('globalPassInput').focus();
-    return;
+  // Nav may be null if nav.json failed — renderMain handles it gracefully
+  if (NAV) {
+    document.title = NAV.site_config?.site_title || '迎戰學測 2027';
+    const cfg = NAV.site_config || {};
+    if (cfg.is_global_locked && cfg.master_password_hash && !sessionStorage.getItem('globalUnlocked')) {
+      showScreen('lockScreen');
+      document.getElementById('lockTitle').textContent = cfg.site_title || '迎戰學測 2027';
+      document.getElementById('globalPassInput').focus();
+      populateSeatSelect();
+      return;
+    }
   }
-  renderMain();
+
+  populateSeatSelect();
+  renderMain();  // always executes
 });
 
 // ══ SCREENS ══
@@ -341,7 +345,10 @@ async function verifyGlobalLock() {
   const hash = await sha256(val), cfg = NAV.site_config;
   if (cfg.admin_hash && hash === cfg.admin_hash) {
     AUTH = {state:'admin',seat:null,name:'管理員'};
-    saveAuth(); sessionStorage.setItem('globalUnlocked','1'); renderMain(); return;
+    saveAuth();
+    sessionStorage.setItem('globalUnlocked','1');
+    sessionStorage.setItem('role','admin');  // PATCH 2
+    renderMain(); return;
   }
   if (cfg.master_password_hash && hash === cfg.master_password_hash) {
     sessionStorage.setItem('globalUnlocked','1'); renderMain(); return;
@@ -353,7 +360,22 @@ document.getElementById('globalPassInput')?.addEventListener('keydown',e=>{if(e.
 
 // ══ RENDER MAIN ══
 function renderMain() {
+  // TASK 1: Always dismiss loadingScreen — even if NAV failed to load.
   showScreen('mainScreen');
+
+  // Guard: if NAV didn't load, render a minimal error state inside mainScreen.
+  if (!NAV) {
+    const wrap = document.getElementById('categoriesWrap');
+    if (wrap) wrap.innerHTML = `
+      <div style="text-align:center;padding:60px 20px">
+        <div style="font-size:28px;margin-bottom:12px">⚠️</div>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--red);letter-spacing:2px">
+          nav.json 載入失敗，請重新整理頁面
+        </div>
+      </div>`;
+    return;
+  }
+
   const cfg = NAV.site_config;
   document.getElementById('siteEyebrow').textContent = cfg.site_subtitle || '龍津英文・決戰系統';
   document.getElementById('siteMeta').textContent = 'LAST UPDATE: ' + (cfg.last_update||'—');
@@ -371,16 +393,10 @@ function renderMain() {
 
   renderMissionBanner();
 
-  // ── Determine role from sessionStorage (flat keys) ──
-  const ssRole = sessionStorage.getItem('role');   // 'individual' | 'admin' | null
-  const isStudent = ssRole === 'individual';
-  const isAdmin   = ssRole === 'admin';
-
-  // Legacy support: also accept AUTH.state from in-page login
-  const authStudent = AUTH.state === 'individual';
-  const authAdmin   = AUTH.state === 'admin';
-  const showStudent = isStudent || authStudent;
-  const showAdmin   = isAdmin   || authAdmin;
+  // PATCH 3: role = sessionStorage.role || AUTH.state (fallback chain)
+  const role = sessionStorage.getItem('role') || AUTH.state || null;
+  const showStudent = role === 'individual';
+  const showAdmin   = role === 'admin';
 
   const wrap = document.getElementById('categoriesWrap');
   wrap.innerHTML = '';
@@ -543,7 +559,10 @@ async function verifyIndividual() {
   // Admin passthrough (raw full password)
   const rawHash=await sha256(raw);
   if (cfg.admin_hash && rawHash===cfg.admin_hash) {
-    AUTH={state:'admin',seat:null,name:'管理員'}; saveAuth(); closeModal(); renderMain(); return;
+    AUTH={state:'admin',seat:null,name:'管理員'}; saveAuth();
+    // PATCH 2: sync flat sessionStorage keys for admin
+    sessionStorage.setItem('role', 'admin');
+    closeModal(); renderMain(); return;
   }
 
   const seatVal=parseInt(selEl.value);
@@ -556,7 +575,13 @@ async function verifyIndividual() {
 
   const computed=await sha256('501'+stu.id+padded);
   if (computed===stu.id_tail_hash) {
-    AUTH={state:'individual',seat:seatVal,name:stu.name}; saveAuth(); closeModal(); renderMain();
+    AUTH={state:'individual',seat:seatVal,name:stu.name}; saveAuth();
+    // PATCH 2: sync flat sessionStorage keys
+    sessionStorage.setItem('role',       'individual');
+    sessionStorage.setItem('student_id', stu.id);
+    sessionStorage.setItem('seat',       String(seatVal));
+    sessionStorage.setItem('name',       stu.name);
+    closeModal(); renderMain();
   } else {
     inp.classList.add('error'); setTimeout(()=>inp.classList.remove('error'),500);
     errEl.textContent='後四碼不符，請再確認';
@@ -566,6 +591,18 @@ async function verifyIndividual() {
 // ══ STUDENT WEAKNESS MODULE ══
 // Loads section scores (3-source priority chain) and calculates
 // the two lowest-scoring sections for display in the personal block.
+
+// ── STEP 10.1: loadManualSections — standalone loader ──
+async function loadManualSections(sid) {
+  // Fetches data/sections_manual/{sid}.json and returns records.at(-1).sections
+  // Returns null if file missing, empty, or any error occurs.
+  try {
+    const r = await fetch(`./data/sections_manual/${sid}.json?v=${Date.now()}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d?.records?.at(-1)?.sections ?? null;
+  } catch(e) { return null; }
+}
 
 async function loadStudentWeakness(sid) {
   const SECTION_KEYS = [
@@ -582,16 +619,10 @@ async function loadStudentWeakness(sid) {
   const primaryHasData = primary &&
     Object.values(primary).some(v => v !== null && v !== undefined && v !== 0);
 
-  // ── Source 2: sections_manual (only when primary has no data) ──
+  // ── Source 2: sections_manual — via loadManualSections() (STEP 10.1) ──
   let manual = null;
   if (!primaryHasData) {
-    try {
-      const mr = await fetch(`./data/sections_manual/${sid}.json?v=${Date.now()}`);
-      if (mr.ok) {
-        const mData = await mr.json();
-        manual = mData?.records?.at(-1)?.sections ?? null;
-      }
-    } catch(e) { /* safe skip */ }
+    manual = await loadManualSections(sid);  // safe skip built-in
   }
 
   // ── Source 3: exam_row eng_sections — handled by caller if needed;
@@ -605,12 +636,14 @@ async function loadStudentWeakness(sid) {
     merged[k] = v;
   }
 
-  // ── Load sections_meta for max scores ──
-  let meta = {};
-  try {
-    const mr = await fetch('./data/sections_meta.json?v=' + Date.now());
-    if (mr.ok) { const d = await mr.json(); meta = d.english || {}; }
-  } catch(e) { /* safe skip */ }
+  // ── Load sections_meta for max scores (cached after first load) ──
+  if (!_sectionsMeta) {
+    try {
+      const mr = await fetch('./data/sections_meta.json?v=' + Date.now());
+      if (mr.ok) { const d = await mr.json(); _sectionsMeta = d.english || {}; }
+    } catch(e) { /* safe skip */ }
+  }
+  const meta = _sectionsMeta || {};
 
   // ── Calculate percentage for each section, ignore null / 0 ──
   const scored = SECTION_KEYS
