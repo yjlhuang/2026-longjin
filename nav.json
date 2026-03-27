@@ -1,34 +1,128 @@
 {
   "site_config": {
-    "site_title": "501 戰略指揮部",
-    "site_subtitle": "LEARNING OS v2.0",
+    "site_title": "迎戰學測 2027",
+    "site_subtitle": "龍津英文・決戰系統",
     "is_global_locked": false,
     "master_password_hash": "",
     "admin_hash": "5d35c52338cc19ae66b676e6f8ad0d803aca3772f26bc7fbe2abdecb2900a499",
-    "announcement": "🎯 距離學測還有 XX 天，每天進步一點點！本週重點：第四大題篇章結構邏輯演練。",
-    "last_update": "2026-03-22",
-    "footer_copyright": "© 2026 YJLHuang Strategic Command. All Rights Reserved."
+    "announcement": "🎯 距離學測還有 XX 天！本週重點：篇章結構邏輯演練，勝負就在那 6 分！",
+    "last_update": "2026-03-24",
+    "footer_copyright": "© 2026 YJLHuang × 龍津高中 Strategic Command. All Rights Reserved."
   },
+  "score_config": [
+    {
+      "key": "vocab",
+      "label": "詞彙題",
+      "section": "第一大題",
+      "total": 15,
+      "trigger": "vocab_weak"
+    },
+    {
+      "key": "cloze",
+      "label": "綜合測驗",
+      "section": "第二大題",
+      "total": 15,
+      "trigger": "cloze_weak"
+    },
+    {
+      "key": "fill_in",
+      "label": "文意選填",
+      "section": "第三大題",
+      "total": 10,
+      "trigger": "fill_in_weak"
+    },
+    {
+      "key": "discourse",
+      "label": "篇章結構",
+      "section": "第四大題",
+      "total": 10,
+      "trigger": "discourse_weak"
+    },
+    {
+      "key": "reading",
+      "label": "閱讀測驗",
+      "section": "第五大題",
+      "total": 20,
+      "trigger": "reading_weak"
+    },
+    {
+      "key": "translation",
+      "label": "翻譯",
+      "section": "非選擇題",
+      "total": 8,
+      "trigger": "translation_weak"
+    },
+    {
+      "key": "composition",
+      "label": "作文",
+      "section": "非選擇題",
+      "total": 20,
+      "trigger": "composition_weak"
+    }
+  ],
   "categories": [
-    { "id": "vocab",    "label": "單字基礎建設", "label_en": "Vocabulary Mastery",     "icon": "⚡", "color": "#22c55e" },
-    { "id": "strategy", "label": "大題攻堅策略", "label_en": "Task-Specific Strategy", "icon": "🎯", "color": "#6b9fff" },
-    { "id": "command",  "label": "501 戰略指揮部","label_en": "Command Center",         "icon": "🛡", "color": "#a07aff" }
+    {
+      "id": "vocab",
+      "label": "單字基礎建設",
+      "label_en": "Vocabulary Mastery",
+      "icon": "⚡",
+      "color": "#22c55e",
+      "access": "public"
+    },
+    {
+      "id": "strategy",
+      "label": "大題攻堅策略",
+      "label_en": "Task-Specific Strategy",
+      "icon": "🎯",
+      "color": "#6b9fff",
+      "access": "public"
+    },
+    {
+      "id": "analysis",
+      "label": "戰力診斷",
+      "label_en": "Battle Analysis",
+      "icon": "📊",
+      "color": "#f0a84a",
+      "access": "public"
+    },
+    {
+      "id": "personal",
+      "label": "個人學習導航",
+      "label_en": "Personal Command",
+      "icon": "🎓",
+      "color": "#34d399",
+      "access": "student"
+    },
+    {
+      "id": "command",
+      "label": "導班深度戰略室",
+      "label_en": "Command Center",
+      "icon": "🛡",
+      "color": "#a07aff",
+      "access": "admin"
+    }
   ],
   "artifact_registry": [
     {
       "id": "vocab-01",
       "title": "戰勝學測 Level 4",
       "desc": "核心單字庫，7000 字系統化攻略",
-      "url": "wordslevel4.html",
+      "url": "#",
       "category": "vocab",
       "difficulty": "Intermediate",
-      "target_skills": ["Vocabulary", "Reading"],
+      "target_skills": [
+        "Vocabulary",
+        "Reading"
+      ],
       "is_private": false,
       "is_external": false,
       "icon": "📖",
       "priority": 1,
       "estimated_time": 20,
-      "trigger_condition": []
+      "trigger_condition": [
+        "vocab_weak",
+        "cloze_weak"
+      ]
     },
     {
       "id": "vocab-02",
@@ -37,13 +131,17 @@
       "url": "#",
       "category": "vocab",
       "difficulty": "Beginner",
-      "target_skills": ["Vocabulary"],
+      "target_skills": [
+        "Vocabulary"
+      ],
       "is_private": false,
       "is_external": false,
       "icon": "🎮",
       "priority": 2,
       "estimated_time": 10,
-      "trigger_condition": []
+      "trigger_condition": [
+        "vocab_weak"
+      ]
     },
     {
       "id": "vocab-03",
@@ -52,7 +150,9 @@
       "url": "#",
       "category": "vocab",
       "difficulty": "Beginner",
-      "target_skills": ["Vocabulary"],
+      "target_skills": [
+        "Vocabulary"
+      ],
       "is_private": false,
       "is_external": false,
       "icon": "🔗",
@@ -67,28 +167,39 @@
       "url": "https://quizlet.com/",
       "category": "vocab",
       "difficulty": "Beginner",
-      "target_skills": ["Vocabulary"],
+      "target_skills": [
+        "Vocabulary"
+      ],
       "is_private": false,
       "is_external": true,
       "icon": "🃏",
       "priority": 2,
       "estimated_time": 15,
-      "trigger_condition": []
+      "trigger_condition": [
+        "vocab_weak"
+      ]
     },
     {
       "id": "strategy-01",
       "title": "第三大題：文意選填",
       "desc": "詞性判斷 × 語境推理，系統化解題流程",
-      "url": "3matching.html",
+      "url": "#",
       "category": "strategy",
       "difficulty": "Intermediate",
-      "target_skills": ["Vocabulary", "Inference", "Grammar"],
+      "target_skills": [
+        "Vocabulary",
+        "Inference",
+        "Grammar"
+      ],
       "is_private": false,
       "is_external": false,
       "icon": "🔤",
       "priority": 2,
       "estimated_time": 15,
-      "trigger_condition": []
+      "trigger_condition": [
+        "fill_in_weak",
+        "cloze_weak"
+      ]
     },
     {
       "id": "strategy-02",
@@ -97,13 +208,19 @@
       "url": "#",
       "category": "strategy",
       "difficulty": "Intermediate",
-      "target_skills": ["Structure", "Logic", "Inference"],
+      "target_skills": [
+        "Structure",
+        "Logic",
+        "Inference"
+      ],
       "is_private": false,
       "is_external": false,
       "icon": "🧩",
       "priority": 1,
       "estimated_time": 20,
-      "trigger_condition": []
+      "trigger_condition": [
+        "discourse_weak"
+      ]
     },
     {
       "id": "strategy-03",
@@ -112,13 +229,19 @@
       "url": "#",
       "category": "strategy",
       "difficulty": "Advanced",
-      "target_skills": ["Reading", "Inference", "Main Idea"],
+      "target_skills": [
+        "Reading",
+        "Inference",
+        "Main Idea"
+      ],
       "is_private": false,
       "is_external": false,
       "icon": "🔍",
       "priority": 1,
       "estimated_time": 25,
-      "trigger_condition": []
+      "trigger_condition": [
+        "reading_weak"
+      ]
     },
     {
       "id": "strategy-04",
@@ -127,13 +250,19 @@
       "url": "#",
       "category": "strategy",
       "difficulty": "Advanced",
-      "target_skills": ["Translation", "Grammar"],
+      "target_skills": [
+        "Translation",
+        "Grammar"
+      ],
       "is_private": false,
       "is_external": false,
       "icon": "✍️",
       "priority": 2,
       "estimated_time": 20,
-      "trigger_condition": []
+      "trigger_condition": [
+        "translation_weak",
+        "composition_weak"
+      ]
     },
     {
       "id": "strategy-05",
@@ -142,22 +271,63 @@
       "url": "https://gemini.google.com/",
       "category": "strategy",
       "difficulty": "Intermediate",
-      "target_skills": ["Writing", "Speaking"],
+      "target_skills": [
+        "Writing",
+        "Speaking"
+      ],
       "is_private": false,
       "is_external": true,
       "icon": "🤖",
       "priority": 3,
       "estimated_time": 30,
+      "trigger_condition": [
+        "composition_weak"
+      ]
+    },
+    {
+      "id": "analysis-01",
+      "title": "成績戰力檢測",
+      "desc": "輸入月考大題成績，系統自動分析弱點，連動首頁推薦",
+      "url": "input_scores.html",
+      "category": "analysis",
+      "difficulty": "Beginner",
+      "target_skills": [
+        "Strategy"
+      ],
+      "is_private": false,
+      "is_external": false,
+      "icon": "🧪",
+      "priority": 1,
+      "estimated_time": 5,
       "trigger_condition": []
     },
     {
-      "id": "command-01",
-      "title": "志願比例沙盤（公開）",
-      "desc": "全班志願分布沙盤推演，檢定達標模擬",
-      "url": "sandbox.html",
-      "category": "command",
+      "id": "personal-01",
+      "title": "歷年戰力診斷報告",
+      "desc": "個人成績走勢 × 英文科目雷達圖，深度自我診斷",
+      "url": "student_dashboard.html",
+      "category": "personal",
+      "difficulty": "Intermediate",
+      "target_skills": [
+        "Strategy"
+      ],
+      "is_private": false,
+      "is_external": false,
+      "icon": "📈",
+      "priority": 1,
+      "estimated_time": 10,
+      "trigger_condition": []
+    },
+    {
+      "id": "personal-02",
+      "title": "志願比例沙盤",
+      "desc": "個人志願檢定達標模擬，沙盤推演",
+      "url": "class_sandbox.html",
+      "category": "personal",
       "difficulty": "Advanced",
-      "target_skills": ["Strategy"],
+      "target_skills": [
+        "Strategy"
+      ],
       "is_private": false,
       "is_external": false,
       "icon": "📊",
@@ -166,18 +336,54 @@
       "trigger_condition": []
     },
     {
-      "id": "command-02",
-      "title": "歷年戰力診斷報告",
-      "desc": "個人成績趨勢 × AI 弱點分析，需身分驗證",
-      "url": "data/",
+      "id": "command-01",
+      "title": "班級成績趨勢分析",
+      "desc": "全班成績趨勢 × 英文走勢 × 導師視角完整報表",
+      "url": "class_analysis.html",
       "category": "command",
       "difficulty": "Advanced",
-      "target_skills": ["Strategy"],
-      "is_private": true,
+      "target_skills": [
+        "Strategy"
+      ],
+      "is_private": false,
       "is_external": false,
-      "icon": "🔐",
+      "icon": "📉",
       "priority": 1,
       "estimated_time": 10,
+      "trigger_condition": []
+    },
+    {
+      "id": "command-02",
+      "title": "志願比例沙盤（全班模式）",
+      "desc": "Admin 模式切換任意學生查看，匯出志願報表",
+      "url": "class_sandbox.html",
+      "category": "command",
+      "difficulty": "Advanced",
+      "target_skills": [
+        "Strategy"
+      ],
+      "is_private": false,
+      "is_external": false,
+      "icon": "🗺",
+      "priority": 1,
+      "estimated_time": 15,
+      "trigger_condition": []
+    },
+    {
+      "id": "command-03",
+      "title": "教師題型資料輸入",
+      "desc": "輸入學生英文各題型得分，產生 sections_manual JSON 供下載",
+      "url": "teacher_input.html",
+      "category": "command",
+      "difficulty": "Beginner",
+      "target_skills": [
+        "Strategy"
+      ],
+      "is_private": false,
+      "is_external": false,
+      "icon": "📝",
+      "priority": 2,
+      "estimated_time": 5,
       "trigger_condition": []
     }
   ]

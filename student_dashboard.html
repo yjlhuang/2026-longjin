@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>個人成績儀表板 · 龍津導班</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ══════════════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════════════ */
+:root {
+  --bg:         #07080f;
+  --bg2:        #0d0e18;
+  --surface:    #111220;
+  --surface2:   #181928;
+  --surface3:   #1f2133;
+  --border:     #232538;
+  --border2:    #2a2d44;
+
+  --text:       #e4e8ff;
+  --text-dim:   #8890b8;
+  --text-xs:    #4a4f6e;
+
+  --blue:       #5b8dee;
+  --blue-dim:   rgba(91,141,238,.12);
+  --blue-glow:  rgba(91,141,238,.25);
+
+  --teal:       #2dd4bf;
+  --teal-dim:   rgba(45,212,191,.10);
+
+  --amber:      #f59e0b;
+  --amber-dim:  rgba(245,158,11,.10);
+
+  --green:      #34d399;
+  --green-dim:  rgba(52,211,153,.10);
+
+  --red:        #f87171;
+  --red-dim:    rgba(248,113,113,.10);
+
+  --purple:     #a78bfa;
+  --purple-dim: rgba(167,139,250,.10);
+
+  --mono: 'DM Mono', monospace;
+  --sans: 'Noto Sans TC', sans-serif;
+  --serif: 'Noto Serif TC', serif;
+}
+
+/* ══════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* grain texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: .5;
+}
+
+/* ══════════════════════════════════════════════
+   LOADER
+══════════════════════════════════════════════ */
+#loader {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+  transition: opacity .5s ease;
+}
+#loader.fade { opacity: 0; pointer-events: none; }
+.loader-ring {
+  width: 42px; height: 42px;
+  border: 2px solid var(--border2);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-label {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-dim); letter-spacing: 2px;
+}
+
+/* ══════════════════════════════════════════════
+   MAIN LAYOUT
+══════════════════════════════════════════════ */
+#app { display: none; position: relative; z-index: 1; }
+
+/* ── Top bar ── */
+.topbar {
+  display: flex; align-items: center;
+  padding: 0 20px; height: 52px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+  gap: 14px;
+}
+.topbar-back {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim); letter-spacing: 1px;
+  text-decoration: none; padding: 5px 10px;
+  border: 1px solid var(--border2); border-radius: 6px;
+  transition: all .2s; flex-shrink: 0;
+}
+.topbar-back:hover { color: var(--blue); border-color: var(--blue); }
+.topbar-title {
+  font-family: var(--serif);
+  font-size: 14px; font-weight: 600;
+  color: var(--text); letter-spacing: 1px;
+  flex: 1;
+}
+.topbar-id {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim); letter-spacing: 1px;
+  padding: 4px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+.topbar-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  flex-shrink: 0;
+}
+
+/* ── Hero strip ── */
+.hero {
+  padding: 28px 20px 20px;
+  max-width: 820px; margin: 0 auto;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.hero-eyebrow {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: 4px; color: var(--text-xs);
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.hero-name {
+  font-family: var(--serif);
+  font-size: clamp(26px, 5vw, 38px);
+  font-weight: 700; color: var(--text);
+  letter-spacing: 1px; line-height: 1.1;
+}
+.hero-name span { color: var(--blue); }
+.hero-meta {
+  margin-top: 10px;
+  display: flex; gap: 16px; flex-wrap: wrap;
+}
+.hero-pill {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim); letter-spacing: 1px;
+  padding: 3px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+}
+
+/* ── Stats row ── */
+.stats-row {
+  max-width: 820px; margin: 0 auto;
+  padding: 18px 20px;
+  display: flex; gap: 10px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+}
+.stat-box {
+  flex: 1; min-width: 100px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  position: relative; overflow: hidden;
+}
+.stat-box::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+}
+.stat-box.blue::after   { background: var(--blue); }
+.stat-box.teal::after   { background: var(--teal); }
+.stat-box.amber::after  { background: var(--amber); }
+.stat-box.green::after  { background: var(--green); }
+.stat-box.purple::after { background: var(--purple); }
+.stat-val {
+  font-family: var(--mono);
+  font-size: 26px; font-weight: 500;
+  line-height: 1; margin-bottom: 5px;
+}
+.stat-box.blue   .stat-val { color: var(--blue); }
+.stat-box.teal   .stat-val { color: var(--teal); }
+.stat-box.amber  .stat-val { color: var(--amber); }
+.stat-box.green  .stat-val { color: var(--green); }
+.stat-box.purple .stat-val { color: var(--purple); }
+.stat-lbl { font-size: 10px; color: var(--text-dim); letter-spacing: .5px; }
+.stat-trend {
+  font-family: var(--mono); font-size: 10px;
+  margin-top: 4px;
+}
+.trend-up   { color: var(--green); }
+.trend-down { color: var(--red); }
+.trend-flat { color: var(--text-xs); }
+
+/* ── Content sections ── */
+.sections-wrap {
+  max-width: 820px; margin: 0 auto;
+  padding: 20px 20px 60px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.section-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.section-head {
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--blue); letter-spacing: 1px;
+  background: var(--blue-dim);
+  border: 1px solid rgba(91,141,238,.25);
+  padding: 2px 8px; border-radius: 4px;
+}
+.section-title {
+  font-size: 13px; font-weight: 700;
+  color: var(--text); flex: 1;
+}
+.section-sub {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim); letter-spacing: 1px;
+}
+.section-body { padding: 18px; }
+
+/* ── Chart containers ── */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+}
+.chart-wrap canvas { max-width: 100%; }
+
+/* ── Weakness classification panel ── */
+.weakness-panel{
+  margin-top:18px;
+  border:1px solid var(--border2);
+  border-radius:10px;
+  overflow:hidden;
+}
+.weakness-panel-title{
+  padding:10px 14px;
+  background:var(--surface2);
+  font-family:var(--mono);font-size:10px;letter-spacing:2px;
+  color:var(--text-dim);text-transform:uppercase;
+  border-bottom:1px solid var(--border2);
+}
+.weakness-zones{
+  display:flex;flex-direction:column;gap:0;
+}
+.weakness-zone{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:10px 14px;
+  border-bottom:1px solid var(--border2);
+  transition:background .15s;
+}
+.weakness-zone:last-child{border-bottom:none;}
+.weakness-zone:hover{background:var(--surface2);}
+.weakness-zone-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.weakness-zone-body{flex:1;min-width:0;}
+.weakness-zone-label{
+  font-family:var(--mono);font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:5px;
+}
+.zone-high   .weakness-zone-label{color:var(--red);}
+.zone-mid    .weakness-zone-label{color:var(--amber);}
+.zone-stable .weakness-zone-label{color:var(--green);}
+.weakness-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.weakness-tag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;border-radius:20px;
+  font-size:11px;font-weight:700;border:1px solid;
+}
+.zone-high   .weakness-tag{color:var(--red);  border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.08);}
+.zone-mid    .weakness-tag{color:var(--amber);border-color:rgba(245,158,11,.3); background:rgba(245,158,11,.08);}
+.zone-stable .weakness-tag{color:var(--green);border-color:rgba(52,211,153,.3); background:rgba(52,211,153,.08);}
+.weakness-tag-pct{
+  font-family:var(--mono);font-size:9px;opacity:.7;
+}
+.weakness-priority{
+  margin-top:12px;padding:10px 14px;
+  background:rgba(248,113,113,.06);
+  border-top:1px solid rgba(248,113,113,.15);
+  font-size:11px;color:var(--text-dim);
+  display:flex;align-items:center;gap:8px;
+}
+.weakness-priority-label{
+  font-family:var(--mono);font-size:9px;letter-spacing:2px;
+  color:var(--red);text-transform:uppercase;white-space:nowrap;
+}
+.weakness-priority strong{color:var(--amber);}
+
+/* ── Radar row (two side by side on desktop) ── */
+.radar-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+@media (max-width: 560px) {
+  .radar-row { grid-template-columns: 1fr; }
+}
+
+/* ── Exam score table ── */
+.score-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px;
+}
+.score-table th {
+  text-align: left; padding: 7px 10px;
+  color: var(--text-dim); font-weight: 600; font-size: 10px;
+  text-transform: uppercase; letter-spacing: .8px;
+  border-bottom: 1px solid var(--border2);
+  white-space: nowrap;
+}
+.score-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+  vertical-align: middle;
+}
+.score-table tr:hover td { background: var(--surface2); }
+.score-table tr:last-child td { border-bottom: none; }
+.period-tag {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text-dim);
+}
+.score-num {
+  font-family: var(--mono); font-weight: 500;
+}
+.rank-tag {
+  display: inline-block;
+  font-family: var(--mono); font-size: 10px;
+  padding: 2px 7px; border-radius: 4px;
+}
+.rank-top    { background: var(--green-dim);  color: var(--green); }
+.rank-mid    { background: var(--amber-dim);  color: var(--amber); }
+.rank-low    { background: var(--red-dim);    color: var(--red); }
+.rank-na     { color: var(--text-xs); }
+
+/* ── No data ── */
+.no-data {
+  padding: 32px 20px; text-align: center;
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text-xs); letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ── Legend ── */
+.legend-row {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--text-dim);
+}
+.legend-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-line { width: 14px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+
+/* ── English sections pills ── */
+.eng-section-pills {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.eng-pill {
+  padding: 4px 12px; border-radius: 20px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: 1px; border: 1px solid;
+}
+.eng-pill.vocab   { color: var(--teal);   border-color: rgba(45,212,191,.3);  background: var(--teal-dim);   }
+.eng-pill.cloze   { color: var(--blue);   border-color: rgba(91,141,238,.3);  background: var(--blue-dim);   }
+.eng-pill.reading { color: var(--purple); border-color: rgba(167,139,250,.3); background: var(--purple-dim); }
+
+/* ── Animations ── */
+.fade-up {
+  animation: fadeUp .45s ease both;
+}
+.fade-up-1 { animation-delay: .05s; }
+.fade-up-2 { animation-delay: .10s; }
+.fade-up-3 { animation-delay: .15s; }
+.fade-up-4 { animation-delay: .20s; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .stats-row { gap: 8px; }
+  .stat-box  { min-width: 80px; }
+  .stat-val  { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-ring"></div>
+  <div class="loader-label">載入成績中…</div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <nav class="topbar">
+    <a class="topbar-back" href="./index.html">← 返回</a>
+    <div class="topbar-title">導班個人成績儀表板</div>
+    <div class="topbar-id" id="topbarId">—</div>
+    <div class="topbar-dot"></div>
+  </nav>
+
+  <div class="hero fade-up">
+    <div class="hero-eyebrow">PERSONAL REPORT · 龍津導班</div>
+    <div class="hero-name">
+      <span id="heroSeat">—</span> 號
+      <span id="heroName" style="margin-left:10px">—</span>
+    </div>
+    <div class="hero-meta">
+      <div class="hero-pill" id="heroPill1">—</div>
+      <div class="hero-pill" id="heroPill2">—</div>
+      <div class="hero-pill" id="heroPill3">—</div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row fade-up fade-up-1" id="statsRow"></div>
+
+  <!-- SECTIONS -->
+  <div class="sections-wrap">
+
+    <!-- ① English trend line -->
+    <div class="section-block fade-up fade-up-2" id="block-eng">
+      <div class="section-head">
+        <div class="section-num">01</div>
+        <div class="section-title">英文歷次段考走勢</div>
+        <div class="section-sub" id="engSubLabel">—</div>
+      </div>
+      <div class="section-body">
+        <div class="legend-row">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--blue)"></div>個人英文
+          </div>
+          <div class="legend-item">
+            <div class="legend-line" style="background:var(--text-xs);border-top:2px dashed var(--text-xs)"></div>班平均
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:220px">
+          <canvas id="chart-eng"></canvas>
+        </div>
+        <div id="eng-table-wrap" style="margin-top:16px"></div>
+      </div>
+    </div>
+
+    <!-- ② Subject radar -->
+    <div class="section-block fade-up fade-up-3" id="block-radar">
+      <div class="section-head">
+        <div class="section-num">02</div>
+        <div class="section-title">科目戰力雷達圖</div>
+        <div class="section-sub" id="radarSubLabel">—</div>
+      </div>
+      <div class="section-body">
+        <div class="radar-row">
+          <div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;letter-spacing:1px">個人 vs 班平均</div>
+            <div class="chart-wrap" style="height:260px">
+              <canvas id="chart-radar"></canvas>
+            </div>
+          </div>
+          <div id="radar-table-col">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:10px;letter-spacing:1px">各科明細</div>
+            <div id="radar-table"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ English sections radar (conditional) -->
+    <div class="section-block fade-up fade-up-4" id="block-eng-sections" style="display:none">
+      <div class="section-head">
+        <div class="section-num">03</div>
+        <div class="section-title">英文題型分析</div>
+        <div class="section-sub">english_sections</div>
+      </div>
+      <div class="section-body">
+        <div class="eng-section-pills">
+          <div class="eng-pill vocab">詞彙 VOCAB</div>
+          <div class="eng-pill cloze">克漏字 CLOZE</div>
+          <div class="eng-pill reading">閱讀 READING</div>
+        </div>
+        <div class="chart-wrap" style="height:260px">
+          <canvas id="chart-eng-sections"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sections-wrap -->
+</div><!-- /app -->
+
+<script>
+// ══════════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════════
+const DATA_BASE = './data/';
+
+// All exam IDs in chronological order
+// private (xx00) are excluded from student view
+const EXAM_IDS = [
+  '010101','010102','010103','010104',   // 高一上
+  '010201','010202','010203','010204',   // 高一下
+  '020101','020102','020103','020104',   // 高二上
+];
+
+const SEMESTER_LABELS = {
+  '010101':'高一上 第一次','010102':'高一上 第二次','010103':'高一上 第三次','010104':'高一上 學期',
+  '010201':'高一下 第一次','010202':'高一下 第二次','010203':'高一下 第三次','010204':'高一下 學期',
+  '020101':'高二上 第一次','020102':'高二上 第二次','020103':'高二上 第三次','020104':'高二上 學期',
+};
+
+// Chart.js global defaults
+Chart.defaults.color = '#8890b8';
+Chart.defaults.borderColor = '#232538';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+// ══════════════════════════════════════════════════════
+//  AUTH GUARD
+// ══════════════════════════════════════════════════════
+const ssRole = sessionStorage.getItem('role');
+const ssSid  = sessionStorage.getItem('student_id');
+
+if (ssRole !== 'individual' || !ssSid) {
+  // admin or unauthenticated → redirect
+  window.location.replace('./index.html');
+}
+
+// ══════════════════════════════════════════════════════
+//  RUNTIME STATE
+// ══════════════════════════════════════════════════════
+let STUDENT_INFO  = null;  // from students.json
+let EXAM_DATA     = {};    // exam_id -> exam JSON
+let STUDENT_RECS  = [];    // [{exam_id, label, ...}]
+let SECTIONS_DATA = null;  // merged sections: students.json analysis > sections_manual
+let SECTIONS_META = {};    // from data/sections_meta.json (max scores per section)
+let SECTIONS_SOURCE = '';  // 'students_json' | 'sections_manual' | 'exam_row' | null
+
+const charts = {};
+function mkChart(id, cfg) {
+  if (charts[id]) { charts[id].destroy(); }
+  charts[id] = new Chart(document.getElementById(id).getContext('2d'), cfg);
+}
+
+// ══════════════════════════════════════════════════════
+//  STEP 10.1: loadManualSections — standalone loader
+// ══════════════════════════════════════════════════════
+async function loadManualSections(sid) {
+  // TASK 2: explicit path ./data/sections_manual/{sid}.json
+  try {
+    const r = await fetch(`./data/sections_manual/${sid}.json?v=${Date.now()}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d?.records?.at(-1)?.sections ?? null;  // always returns sections object or null
+  } catch(e) { return null; }
+}
+
+// ══════════════════════════════════════════════════════
+//  LOAD
+// ══════════════════════════════════════════════════════
+async function init() {
+  // ── Step 1: students.json ──────────────────────────────
+  // Loads name, seat, and the primary analysis block.
+  try {
+    const r = await fetch(DATA_BASE + 'students.json?v=' + Date.now());
+    if (r.ok) {
+      const data = await r.json();
+      STUDENT_INFO = (data.students || []).find(s => s.id === ssSid) || null;
+    }
+  } catch(e) { console.warn('students.json failed:', e); }
+
+  // ── Step 2 (conditional): sections_manual — via loadManualSections() (STEP 10.1) ──
+  let manualSections = null;
+  const primaryAnalysis = STUDENT_INFO?.analysis ?? null;
+  const primaryHasData  = primaryAnalysis &&
+    Object.values(primaryAnalysis).some(v => v !== null && v !== 0);
+
+  if (!primaryHasData) {
+    manualSections = await loadManualSections(ssSid);  // safe skip built-in
+  }
+
+  // ── Step 3: Merge — students.json > sections_manual ───
+  // For each of the 8 section keys, prefer students.json analysis value
+  // when it is non-null; fall back to sections_manual otherwise.
+  const SECTION_KEYS = [
+    'listening','vocab','cloze','context',
+    'structure','reading','translation','writing'
+  ];
+  const merged = {};
+  let anyValue = false;
+  for (const k of SECTION_KEYS) {
+    const fromPrimary = primaryAnalysis?.[k] ?? null;
+    const fromManual  = manualSections?.[k]  ?? null;
+    merged[k] = fromPrimary ?? fromManual;   // primary wins; fall back to manual
+    if (merged[k] !== null) anyValue = true;
+  }
+
+  if (anyValue) {
+    SECTIONS_DATA   = merged;
+    SECTIONS_SOURCE = primaryHasData ? 'students_json' : 'sections_manual';
+  }
+
+  // ── Step 4: sections_meta.json (max scores for normalisation) ──
+  try {
+    const smr = await fetch(DATA_BASE + 'sections_meta.json?v=' + Date.now());
+    if (smr.ok) {
+      const smData = await smr.json();
+      SECTIONS_META = smData.english || {};
+    }
+  } catch(e) { console.warn('sections_meta.json failed:', e); }
+
+  // ── Step 5: Load all exam files in parallel ────────────
+  const results = await Promise.allSettled(
+    EXAM_IDS.map(id =>
+      fetch(`${DATA_BASE}exams/${id}.json?v=${Date.now()}`)
+        .then(r => r.ok ? r.json() : null)
+    )
+  );
+
+  EXAM_IDS.forEach((id, i) => {
+    const val = results[i].status === 'fulfilled' ? results[i].value : null;
+    if (val) EXAM_DATA[id] = val;
+  });
+
+  // ── Step 6: Build per-student record list ─────────────
+  EXAM_IDS.forEach(id => {
+    const exam = EXAM_DATA[id];
+    if (!exam) return;
+    const row = (exam.students || []).find(s => s.id === ssSid);
+    if (!row) return;
+
+    // If no SECTIONS_DATA yet, try pulling english_sections from exam row
+    // (lowest priority — only used as last resort for ③ chart)
+    if (!SECTIONS_DATA && row.english_sections) {
+      SECTIONS_DATA   = row.english_sections;
+      SECTIONS_SOURCE = 'exam_row';
+    }
+
+    STUDENT_RECS.push({
+      exam_id:       id,
+      label:         SEMESTER_LABELS[id] || id,
+      avg_all:       row['學科平均'] ?? null,
+      class_avg_all: exam.class_avg?.['學科平均'] ?? null,
+      rank_class:    row['班排'] || null,
+      rank_year:     row['年排'] || null,
+      eng_score:     row.scores?.['英文'] ?? null,
+      class_eng_avg: exam.class_avg?.['英文'] ?? null,
+      scores:        row.scores || {},
+      class_avg:     exam.class_avg || {},
+    });
+  });
+
+  renderAll();
+  hideLo();
+  document.getElementById('app').style.display = 'block';
+}
+
+function hideLo() {
+  const l = document.getElementById('loader');
+  l.classList.add('fade');
+  setTimeout(() => l.style.display = 'none', 500);
+}
+
+// ══════════════════════════════════════════════════════
+//  RENDER ORCHESTRATOR
+// ══════════════════════════════════════════════════════
+function renderAll() {
+  renderHero();
+  renderStats();
+  renderEngLine();
+  renderRadar();
+  renderEngSections();
+}
+
+// ── Hero ──────────────────────────────────────────────
+function renderHero() {
+  const seat = STUDENT_INFO?.seat ?? ssSid.slice(-2);
+  const name = STUDENT_INFO?.name ?? '(名字載入中)';
+
+  document.getElementById('topbarId').textContent = `No. ${seat}`;
+  document.getElementById('heroSeat').textContent = String(seat).padStart(2, '0');
+  document.getElementById('heroName').textContent = name;
+
+  // Pills
+  const latest = STUDENT_RECS.filter(r => !r.exam_id.endsWith('04')).slice(-1)[0];
+  document.getElementById('heroPill1').textContent =
+    latest ? `最近考試：${latest.label}` : '尚無考試記錄';
+  document.getElementById('heroPill2').textContent =
+    STUDENT_INFO?.class ? `${STUDENT_INFO.class}班` : '龍津高中';
+  document.getElementById('heroPill3').textContent =
+    `共 ${STUDENT_RECS.length} 筆成績`;
+}
+
+// ── Stats row ─────────────────────────────────────────
+function renderStats() {
+  const row = document.getElementById('statsRow');
+  const monthly = STUDENT_RECS.filter(r => !r.exam_id.endsWith('04'));
+  const latest  = monthly.slice(-1)[0];
+  const prev    = monthly.slice(-2, -1)[0];
+
+  if (!latest) { row.innerHTML = '<div class="no-data">尚無成績資料</div>'; return; }
+
+  const engLatest = latest.eng_score;
+  const engPrev   = prev?.eng_score ?? null;
+  const engDiff   = (engLatest != null && engPrev != null) ? (engLatest - engPrev) : null;
+  const engTrend  = engDiff == null ? '' : engDiff > 0
+    ? `<div class="stat-trend trend-up">▲ ${engDiff.toFixed(1)}</div>`
+    : engDiff < 0
+    ? `<div class="stat-trend trend-down">▼ ${Math.abs(engDiff).toFixed(1)}</div>`
+    : `<div class="stat-trend trend-flat">→ 持平</div>`;
+
+  const avgLatest = latest.avg_all;
+  const avgPrev   = prev?.avg_all ?? null;
+  const avgDiff   = (avgLatest != null && avgPrev != null) ? (avgLatest - avgPrev) : null;
+  const avgTrend  = avgDiff == null ? '' : avgDiff > 0
+    ? `<div class="stat-trend trend-up">▲ ${avgDiff.toFixed(1)}</div>`
+    : avgDiff < 0
+    ? `<div class="stat-trend trend-down">▼ ${Math.abs(avgDiff).toFixed(1)}</div>`
+    : `<div class="stat-trend trend-flat">→ 持平</div>`;
+
+  const vsEngClass = (engLatest != null && latest.class_eng_avg != null)
+    ? (engLatest - latest.class_eng_avg).toFixed(1) : '—';
+  const vsEngColor = parseFloat(vsEngClass) >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const rankClass = latest.rank_class || '—';
+  const rankYear  = latest.rank_year  || '—';
+
+  row.innerHTML = `
+    <div class="stat-box blue">
+      <div class="stat-val">${engLatest ?? '—'}</div>
+      <div class="stat-lbl">英文（最近月考）</div>
+      ${engTrend}
+    </div>
+    <div class="stat-box teal">
+      <div class="stat-val" style="font-size:18px">${vsEngClass >= 0 ? '+' : ''}${vsEngClass}</div>
+      <div class="stat-lbl">vs 班平均</div>
+      <div class="stat-trend" style="color:${vsEngColor}">班平均 ${latest.class_eng_avg?.toFixed(1) ?? '—'}</div>
+    </div>
+    <div class="stat-box amber">
+      <div class="stat-val" style="font-size:18px">${avgLatest?.toFixed(1) ?? '—'}</div>
+      <div class="stat-lbl">學科平均</div>
+      ${avgTrend}
+    </div>
+    <div class="stat-box green">
+      <div class="stat-val" style="font-size:18px">${rankClass}</div>
+      <div class="stat-lbl">班排（最近）</div>
+    </div>
+    <div class="stat-box purple">
+      <div class="stat-val" style="font-size:18px">${rankYear}</div>
+      <div class="stat-lbl">年排（最近）</div>
+    </div>`;
+}
+
+// ── ① English line chart ──────────────────────────────
+function renderEngLine() {
+  const recs = STUDENT_RECS.filter(r => r.eng_score != null);
+  if (!recs.length) {
+    document.getElementById('block-eng').querySelector('.section-body').innerHTML =
+      '<div class="no-data">無英文成績資料</div>';
+    return;
+  }
+
+  const labels    = recs.map(r => r.label.replace('高', '').replace(' ', '\n'));
+  const engScores = recs.map(r => r.eng_score);
+  const classAvgs = recs.map(r => r.class_eng_avg);
+  const monthlyOnly = recs.filter(r => !r.exam_id.endsWith('04'));
+
+  document.getElementById('engSubLabel').textContent =
+    `共 ${recs.length} 筆 · 最高 ${Math.max(...engScores.filter(v=>v!=null))} · 最低 ${Math.min(...engScores.filter(v=>v!=null))}`;
+
+  mkChart('chart-eng', {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '英文',
+          data: engScores,
+          borderColor: '#5b8dee',
+          backgroundColor: 'rgba(91,141,238,.08)',
+          pointBackgroundColor: engScores.map(v =>
+            v == null ? 'transparent' :
+            v >= 80 ? '#34d399' : v >= 60 ? '#f59e0b' : '#f87171'
+          ),
+          pointRadius: 5, pointHoverRadius: 7,
+          tension: .35, fill: true, borderWidth: 2,
+        },
+        {
+          label: '班平均',
+          data: classAvgs,
+          borderColor: 'rgba(255,255,255,.18)',
+          borderDash: [5, 4],
+          pointRadius: 0, tension: .35, borderWidth: 1.5,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#181928', borderColor: '#232538', borderWidth: 1,
+          titleColor: '#e4e8ff', bodyColor: '#8890b8', padding: 10,
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}：${ctx.parsed.y ?? '—'}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,.04)' },
+          ticks: { color: '#8890b8', font: { size: 10 }, maxRotation: 0 },
+        },
+        y: {
+          min: 0, max: 105,
+          grid: { color: 'rgba(255,255,255,.04)' },
+          ticks: { color: '#8890b8', font: { size: 10 } },
+        },
+      },
+    },
+  });
+
+  // Score table below chart
+  const tableWrap = document.getElementById('eng-table-wrap');
+  tableWrap.innerHTML = `
+    <table class="score-table">
+      <thead><tr>
+        <th>考試</th><th>英文</th><th>班平均</th><th>差距</th><th>班排</th>
+      </tr></thead>
+      <tbody>
+        ${recs.map(r => {
+          const diff = (r.eng_score != null && r.class_eng_avg != null)
+            ? (r.eng_score - r.class_eng_avg).toFixed(1) : '—';
+          const diffColor = parseFloat(diff) >= 0 ? 'var(--green)' : 'var(--red)';
+          const rk = r.rank_class || '—';
+          const rkCls = rankBadgeClass(r.rank_class);
+          return `<tr>
+            <td class="period-tag">${r.label}</td>
+            <td class="score-num" style="color:${scoreColor(r.eng_score)}">${r.eng_score ?? '—'}</td>
+            <td class="score-num">${r.class_eng_avg?.toFixed(1) ?? '—'}</td>
+            <td style="font-family:var(--mono);font-size:11px;color:${diffColor}">
+              ${parseFloat(diff) >= 0 && diff !== '—' ? '+' : ''}${diff}
+            </td>
+            <td><span class="rank-tag ${rkCls}">${rk}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── ② Subject radar ──────────────────────────────────
+function renderRadar() {
+  // Use latest monthly exam for radar
+  const latest = STUDENT_RECS
+    .filter(r => !r.exam_id.endsWith('04') && Object.keys(r.scores).length > 0)
+    .slice(-1)[0];
+
+  if (!latest) {
+    document.getElementById('block-radar').querySelector('.section-body').innerHTML =
+      '<div class="no-data">無科目成績資料</div>';
+    return;
+  }
+
+  // Auto-detect subjects from the scores object
+  const subjects = Object.keys(latest.scores);
+
+  document.getElementById('radarSubLabel').textContent =
+    `${latest.label} · ${subjects.length} 科`;
+
+  const studentVals = subjects.map(s => latest.scores[s] ?? null);
+  const classVals   = subjects.map(s => latest.class_avg[s] ?? null);
+
+  mkChart('chart-radar', {
+    type: 'radar',
+    data: {
+      labels: subjects,
+      datasets: [
+        {
+          label: '個人',
+          data: studentVals,
+          borderColor: '#5b8dee',
+          backgroundColor: 'rgba(91,141,238,.18)',
+          pointBackgroundColor: '#5b8dee',
+          borderWidth: 2, pointRadius: 4,
+        },
+        {
+          label: '班平均',
+          data: classVals,
+          borderColor: 'rgba(255,255,255,.20)',
+          backgroundColor: 'rgba(255,255,255,.04)',
+          borderDash: [4, 3],
+          pointBackgroundColor: 'rgba(255,255,255,.3)',
+          borderWidth: 1.5, pointRadius: 3,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 8, padding: 14, font: { size: 10 } } },
+        tooltip: {
+          backgroundColor: '#181928', borderColor: '#232538', borderWidth: 1,
+          titleColor: '#e4e8ff', bodyColor: '#8890b8',
+        },
+      },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 20, color: '#4a4f6e', font: { size: 9 }, backdropColor: 'transparent' },
+          grid:  { color: 'rgba(255,255,255,.06)' },
+          pointLabels: { color: '#8890b8', font: { size: 11 } },
+          angleLines: { color: 'rgba(255,255,255,.06)' },
+        },
+      },
+    },
+  });
+
+  // Side table
+  const tableEl = document.getElementById('radar-table');
+  tableEl.innerHTML = `
+    <table class="score-table">
+      <thead><tr><th>科目</th><th>個人</th><th>班均</th><th>差距</th></tr></thead>
+      <tbody>
+        ${subjects.map(s => {
+          const v = latest.scores[s], a = latest.class_avg[s];
+          const diff = (v != null && a != null) ? (v - a).toFixed(1) : '—';
+          const diffColor = parseFloat(diff) >= 0 ? 'var(--green)' : 'var(--red)';
+          return `<tr>
+            <td style="font-weight:700">${s}</td>
+            <td class="score-num" style="color:${scoreColor(v)}">${v ?? '—'}</td>
+            <td class="score-num">${a?.toFixed(1) ?? '—'}</td>
+            <td style="font-family:var(--mono);font-size:11px;color:${diffColor}">
+              ${parseFloat(diff) >= 0 && diff !== '—' ? '+' : ''}${diff}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── ③ English sections radar ──────────────────────────
+function renderEngSections() {
+  // SECTIONS_DATA is the merged result from init():
+  //   students.json analysis  (highest priority)
+  //   sections_manual/{id}    (fallback)
+  //   exam row english_sections (last resort)
+  if (!SECTIONS_DATA) return;
+
+  // Only render keys with actual values
+  const ALL_KEYS = [
+    'listening','vocab','cloze','context',
+    'structure','reading','translation','writing'
+  ];
+  const LABELS = {
+    listening:'聽力',  vocab:'詞彙',     cloze:'克漏字', context:'文意選填',
+    structure:'篇章',  reading:'閱讀',   translation:'翻譯', writing:'作文'
+  };
+  const COLORS = {
+    listening:'#f59e0b', vocab:'#2dd4bf',   cloze:'#5b8dee',  context:'#a78bfa',
+    structure:'#34d399', reading:'#f87171', translation:'#fb923c', writing:'#e879f9'
+  };
+
+  const keys = ALL_KEYS.filter(k => SECTIONS_DATA[k] !== null && SECTIONS_DATA[k] !== undefined);
+  if (!keys.length) return;
+
+  const block = document.getElementById('block-eng-sections');
+  block.style.display = 'block';
+
+  // Update source badge in section header
+  const sourceBadgeMap = {
+    students_json:   '來源：導班分析資料',
+    sections_manual: '來源：任課班手動輸入',
+    exam_row:        '來源：考試題型欄位',
+  };
+  document.querySelector('#block-eng-sections .section-sub').textContent =
+    sourceBadgeMap[SECTIONS_SOURCE] || 'english_sections';
+
+  // Normalise raw scores to 0–100 using sections_meta max values.
+  // If sections_meta is unavailable, fall back to proportional-to-max.
+  const metaTotal = Object.keys(SECTIONS_META).length;
+  const norm = keys.map(k => {
+    const raw     = SECTIONS_DATA[k];
+    const maxScore = metaTotal ? (SECTIONS_META[k] ?? null) : null;
+    if (maxScore)  return Math.min(Math.round((raw / maxScore) * 100), 100);
+    // fallback: proportion of the highest raw value present
+    const allRaw = keys.map(x => SECTIONS_DATA[x]).filter(v => v != null);
+    const peak   = Math.max(...allRaw, 1);
+    return Math.min(Math.round((raw / peak) * 100), 100);
+  });
+
+  mkChart('chart-eng-sections', {
+    type: 'radar',
+    data: {
+      labels: keys.map(k => LABELS[k] || k),
+      datasets: [{
+        label: '英文題型',
+        data: norm,
+        borderColor: '#5b8dee',
+        backgroundColor: 'rgba(91,141,238,.15)',
+        pointBackgroundColor: keys.map(k => COLORS[k] || '#5b8dee'),
+        pointRadius: 6,
+        borderWidth: 2,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#181928', borderColor: '#232538', borderWidth: 1,
+          titleColor: '#e4e8ff', bodyColor: '#8890b8',
+          callbacks: {
+            // Show raw score + percentage in tooltip
+            label: ctx => {
+              const k    = keys[ctx.dataIndex];
+              const raw  = SECTIONS_DATA[k];
+              const max  = SECTIONS_META[k] ?? null;
+              const pct  = norm[ctx.dataIndex];
+              return max
+                ? ` ${LABELS[k] || k}：${raw} / ${max}（${pct}%）`
+                : ` ${LABELS[k] || k}：${raw}（${pct}%）`;
+            },
+          },
+        },
+      },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { display: false },
+          grid:        { color: 'rgba(255,255,255,.06)' },
+          pointLabels: { color: '#8890b8', font: { size: 11 } },
+          angleLines:  { color: 'rgba(255,255,255,.06)' },
+        },
+      },
+    },
+  });
+
+  // Score breakdown table below radar
+  const body = document.querySelector('#block-eng-sections .section-body');
+  // Remove previous table if any
+  body.querySelector('.sections-table-wrap')?.remove();
+  const wrap = document.createElement('div');
+  wrap.className = 'sections-table-wrap';
+  wrap.style.marginTop = '16px';
+  wrap.innerHTML = `
+    <table class="score-table">
+      <thead><tr><th>題型</th><th>得分</th><th>滿分</th><th>得分率</th></tr></thead>
+      <tbody>
+        ${keys.map(k => {
+          const raw  = SECTIONS_DATA[k];
+          const max  = SECTIONS_META[k] ?? null;
+          const pct  = max ? Math.round((raw / max) * 100) : null;
+          const col  = pct == null ? 'var(--text-dim)'
+                     : pct >= 75  ? 'var(--green)'
+                     : pct >= 55  ? 'var(--amber)'
+                     : 'var(--red)';
+          return `<tr>
+            <td style="font-weight:700">${LABELS[k] || k}</td>
+            <td class="score-num" style="color:${col}">${raw}</td>
+            <td class="score-num" style="color:var(--text-dim)">${max ?? '—'}</td>
+            <td style="font-family:var(--mono);font-size:11px;color:${col}">
+              ${pct != null ? pct + '%' : '—'}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  body.appendChild(wrap);
+
+  // ── Weakness classification panel ────────────────────
+  // Built from the same `keys` / `norm` / SECTIONS_META already computed above.
+  // Uses: pct >= 75 → stable, 55–74 → moderate, < 55 → high risk
+  // Ignores keys with null/0 (filtered out of `keys` already).
+  renderWeaknessPanel(body, keys, norm, LABELS, SECTIONS_DATA, SECTIONS_META);
+}
+
+// ── Weakness classification panel renderer ────────────
+function renderWeaknessPanel(container, keys, normPcts, LABELS, SECTIONS_DATA, SECTIONS_META) {
+  // Remove previous panel if re-rendered
+  container.querySelector('.weakness-panel')?.remove();
+
+  // Build scored list: {key, label, pct (0–100), raw, max}
+  const scored = keys
+    .map((k, i) => {
+      const raw = SECTIONS_DATA[k];
+      const max = SECTIONS_META[k] ?? null;
+      // Skip items without meta (can't classify reliably)
+      if (!max || raw === null || raw === undefined || raw === 0) return null;
+      return { key: k, label: LABELS[k] || k, pct: normPcts[i], raw, max };
+    })
+    .filter(Boolean);
+
+  // Nothing to show
+  if (!scored.length) return;
+
+  // Classify into three zones
+  const high   = scored.filter(s => s.pct <  60);   // PATCH 5: unified threshold
+  const mid    = scored.filter(s => s.pct >= 60 && s.pct < 75);
+  const stable = scored.filter(s => s.pct >= 75);
+
+  // Sort each zone ascending (worst first)
+  [high, mid, stable].forEach(z => z.sort((a, b) => a.pct - b.pct));
+
+  // Priority: bottom 2 from high, fill from mid if needed
+  const priorityPool = [...high, ...mid].sort((a, b) => a.pct - b.pct);
+  const priority = priorityPool.slice(0, 2);
+
+  // Build zone HTML helper
+  const zoneHTML = (zoneItems, cls, icon, label) => {
+    if (!zoneItems.length) return '';
+    const tags = zoneItems.map(s =>
+      `<span class="weakness-tag">
+        ${s.label}
+        <span class="weakness-tag-pct">${s.pct}%</span>
+      </span>`
+    ).join('');
+    return `
+      <div class="weakness-zone ${cls}">
+        <div class="weakness-zone-icon">${icon}</div>
+        <div class="weakness-zone-body">
+          <div class="weakness-zone-label">${label}</div>
+          <div class="weakness-tags">${tags}</div>
+        </div>
+      </div>`;
+  };
+
+  const priorityHTML = priority.length
+    ? `<div class="weakness-priority">
+        <span class="weakness-priority-label">建議優先補強</span>
+        ${priority.map(s => `<strong>${s.label}</strong><span style="font-family:var(--mono);font-size:10px;opacity:.6">${s.pct}%</span>`).join('<span style="color:var(--text-xs);margin:0 2px">·</span>')}
+       </div>`
+    : '';
+
+  const panel = document.createElement('div');
+  panel.className = 'weakness-panel';
+  panel.innerHTML = `
+    <div class="weakness-panel-title">題型弱點分類分析</div>
+    <div class="weakness-zones">
+      ${zoneHTML(high,   'zone-high',   '🔥', '高風險 HIGH RISK · 得分率 < 60%')}
+      ${zoneHTML(mid,    'zone-mid',    '⚠️', '待補強 MODERATE · 得分率 60–75%')}
+      ${zoneHTML(stable, 'zone-stable', '✅', '穩定區 STABLE · 得分率 ≥ 75%')}
+    </div>
+    ${priorityHTML}`;
+
+  container.appendChild(panel);
+}
+
+// ══════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════
+function scoreColor(v) {
+  if (v == null) return 'var(--text-dim)';
+  if (v >= 80) return 'var(--green)';
+  if (v >= 65) return '#86efac';
+  if (v >= 50) return 'var(--amber)';
+  return 'var(--red)';
+}
+
+function rankBadgeClass(rankStr) {
+  if (!rankStr) return 'rank-na';
+  const [n, t] = rankStr.split('/').map(Number);
+  const p = n / t;
+  return p <= .25 ? 'rank-top' : p <= .60 ? 'rank-mid' : 'rank-low';
+}
+
+// ══════════════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>教師題型資料輸入 · 龍津導班</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080f;--bg2:#0d0e18;--surface:#111220;--surface2:#181928;
+  --border:#232538;--border2:#2a2d44;
+  --text:#e4e8ff;--muted:#8890b8;--xs:#4a4f6e;
+  --blue:#5b8dee;--blue-dim:rgba(91,141,238,.12);
+  --green:#34d399;--green-dim:rgba(52,211,153,.10);
+  --amber:#f59e0b;--amber-dim:rgba(245,158,11,.10);
+  --red:#f87171;--red-dim:rgba(248,113,113,.10);
+  --purple:#a78bfa;
+  --mono:'DM Mono',monospace;--sans:'Noto Sans TC',sans-serif;
+  --r:10px;--r-sm:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;padding:32px 16px 60px;
+  -webkit-font-smoothing:antialiased;}
+
+/* ── Access denied ── */
+#accessDenied{
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  min-height:60vh;gap:16px;text-align:center;
+}
+#accessDenied.show{display:flex;}
+.denied-icon{font-size:48px;}
+.denied-title{font-family:var(--mono);font-size:13px;letter-spacing:3px;color:var(--red);}
+.denied-back{font-family:var(--mono);font-size:11px;color:var(--muted);text-decoration:none;
+  padding:8px 16px;border:1px solid var(--border2);border-radius:var(--r-sm);transition:all .2s;}
+.denied-back:hover{color:var(--blue);border-color:var(--blue);}
+
+/* ── App ── */
+#app{display:none;width:100%;max-width:680px;}
+#app.show{display:block;}
+
+/* ── Header ── */
+.page-header{margin-bottom:28px;}
+.page-back{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;
+  letter-spacing:1px;color:var(--muted);text-decoration:none;
+  padding:5px 10px;border:1px solid var(--border2);border-radius:var(--r-sm);
+  transition:all .2s;margin-bottom:20px;}
+.page-back:hover{color:var(--blue);border-color:var(--blue);}
+.page-eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:4px;color:var(--xs);
+  text-transform:uppercase;margin-bottom:8px;}
+.page-title{font-size:clamp(20px,4vw,28px);font-weight:900;color:var(--text);margin-bottom:6px;}
+.page-sub{font-size:12px;color:var(--muted);line-height:1.6;}
+.admin-badge{display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+  font-family:var(--mono);font-size:10px;letter-spacing:1px;
+  color:var(--amber);padding:3px 10px;
+  background:var(--amber-dim);border:1px solid rgba(245,158,11,.3);border-radius:20px;}
+
+/* ── Section card ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:22px 20px;margin-bottom:14px;}
+.card-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:16px;}
+
+/* ── Student selector ── */
+.stu-select-wrap{position:relative;margin-bottom:0;}
+.field-label{font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:8px;}
+select,input[type=text],input[type=number]{
+  width:100%;background:var(--bg2);border:1px solid var(--border2);color:var(--text);
+  font-family:var(--sans);font-size:14px;padding:11px 14px;border-radius:var(--r-sm);
+  outline:none;transition:border-color .2s;appearance:none;
+}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238890b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;}
+select:focus,input:focus{border-color:var(--blue);}
+select option{background:var(--surface2);}
+
+/* ── Score inputs grid ── */
+.scores-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;}
+.score-field{display:flex;flex-direction:column;gap:6px;}
+.score-field input{font-family:var(--mono);font-size:18px;text-align:center;letter-spacing:2px;}
+.score-field input:focus{border-color:var(--blue);}
+.score-max{font-family:var(--mono);font-size:9px;color:var(--xs);text-align:center;margin-top:2px;}
+
+/* ── Meta row ── */
+.meta-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0;}
+.full-row{grid-column:1/-1;}
+
+/* ── Submit area ── */
+.submit-area{margin-top:6px;}
+.btn-primary{width:100%;padding:14px;background:var(--blue);color:#fff;
+  font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:2px;
+  border:none;border-radius:var(--r-sm);cursor:pointer;transition:opacity .2s,transform .1s;
+  margin-bottom:10px;}
+.btn-primary:hover{opacity:.88;} .btn-primary:active{transform:scale(.98);}
+.btn-secondary{width:100%;padding:10px;background:transparent;
+  color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:1px;
+  border:1px solid var(--border2);border-radius:var(--r-sm);cursor:pointer;transition:all .2s;}
+.btn-secondary:hover{color:var(--green);border-color:var(--green);}
+
+/* ── Toast / status ── */
+.status-bar{min-height:36px;display:flex;align-items:center;gap:10px;
+  padding:0 2px;margin-top:4px;}
+.status-msg{font-family:var(--mono);font-size:11px;letter-spacing:1px;}
+.status-ok  .status-msg{color:var(--green);}
+.status-err .status-msg{color:var(--red);}
+.status-info .status-msg{color:var(--muted);}
+
+/* ── Preview panel ── */
+.preview-panel{display:none;background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r-sm);padding:14px;margin-top:14px;}
+.preview-panel.show{display:block;}
+.preview-label{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:8px;}
+.preview-code{font-family:var(--mono);font-size:11px;color:var(--text);line-height:1.6;
+  white-space:pre-wrap;word-break:break-all;}
+
+/* ── Records table ── */
+.records-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px;}
+.records-table th{text-align:left;padding:6px 10px;color:var(--muted);font-size:10px;
+  text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border2);}
+.records-table td{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,.03);}
+.records-table tr:hover td{background:var(--surface2);}
+.records-table tr:last-child td{border-bottom:none;}
+.tag-latest{font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;
+  background:var(--blue-dim);color:var(--blue);border:1px solid rgba(91,141,238,.3);}
+
+/* ── Download strip ── */
+.dl-strip{background:linear-gradient(135deg,rgba(52,211,153,.06),rgba(91,141,238,.04));
+  border:1px solid rgba(52,211,153,.2);border-radius:var(--r);
+  padding:16px 18px;margin-bottom:14px;display:none;}
+.dl-strip.show{display:block;}
+.dl-strip-title{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--green);
+  text-transform:uppercase;margin-bottom:8px;}
+.dl-strip-body{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px;}
+.dl-strip-body strong{color:var(--text);}
+.dl-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;
+  background:var(--green);color:#0a1a12;font-family:var(--mono);font-size:12px;
+  font-weight:700;letter-spacing:1px;border:none;border-radius:var(--r-sm);
+  cursor:pointer;transition:opacity .2s;}
+.dl-btn:hover{opacity:.88;}
+
+.divider{height:1px;background:var(--border2);margin:6px 0;}
+</style>
+</head>
+<body>
+
+<!-- ACCESS DENIED -->
+<div id="accessDenied">
+  <div class="denied-icon">🔒</div>
+  <div class="denied-title">ACCESS DENIED · 無權限</div>
+  <div style="font-size:12px;color:var(--muted)">此頁面僅供管理員使用</div>
+  <a class="denied-back" href="./index.html">← 返回主頁</a>
+</div>
+
+<!-- APP (admin only) -->
+<div id="app">
+  <div class="page-header">
+    <a class="page-back" href="./index.html">← 返回指揮部</a>
+    <div class="page-eyebrow">TEACHER INPUT PIPELINE · STEP 9</div>
+    <div class="page-title">教師題型資料輸入</div>
+    <div class="page-sub">輸入學生英文各題型得分，系統產生標準格式 JSON 供下載後放入 <code style="color:var(--blue)">data/sections_manual/</code></div>
+    <div class="admin-badge">⚡ ADMIN MODE</div>
+  </div>
+
+  <!-- ① 選擇學生 -->
+  <div class="card">
+    <div class="card-title">① 選擇學生</div>
+    <div class="field-label">座號 / 姓名</div>
+    <select id="stuSelect" onchange="onStuChange()">
+      <option value="">— 請選擇學生 —</option>
+    </select>
+    <div style="margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--xs)" id="stuInfo"></div>
+  </div>
+
+  <!-- ② 考試資訊 -->
+  <div class="card">
+    <div class="card-title">② 考試資訊</div>
+    <div class="meta-row">
+      <div>
+        <div class="field-label">考試日期</div>
+        <input type="text" id="examDate" placeholder="2026-03-01" maxlength="10">
+      </div>
+      <div>
+        <div class="field-label">考試名稱</div>
+        <input type="text" id="examName" placeholder="2026_mock_01">
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 題型得分 -->
+  <div class="card">
+    <div class="card-title">③ 英文題型得分（空白 = 跳過）</div>
+    <div class="scores-grid" id="scoresGrid"></div>
+  </div>
+
+  <!-- 下載說明 -->
+  <div class="dl-strip" id="dlStrip">
+    <div class="dl-strip-title">✓ 靜態 Hosting 寫入方式</div>
+    <div class="dl-strip-body">
+      GitHub Pages 為靜態 hosting，瀏覽器無法直接寫入伺服器檔案。<br>
+      請點擊下方按鈕下載 JSON 檔，再手動上傳至：<br>
+      <strong>data/sections_manual/{sid}.json</strong>
+    </div>
+    <button class="dl-btn" id="dlBtn" onclick="downloadJSON()">⬇ 下載 JSON 檔案</button>
+  </div>
+
+  <!-- ④ 操作按鈕 -->
+  <div class="card submit-area">
+    <div class="card-title">④ 產生資料</div>
+    <button class="btn-primary" onclick="generateRecord()">⚡ 產生 JSON 並下載</button>
+    <button class="btn-secondary" onclick="previewRecord()">👁 預覽 JSON</button>
+    <div class="status-bar status-info" id="statusBar">
+      <span class="status-msg" id="statusMsg">選擇學生並填寫得分後按下「產生 JSON 並下載」</span>
+    </div>
+    <div class="preview-panel" id="previewPanel">
+      <div class="preview-label">JSON Preview</div>
+      <div class="preview-code" id="previewCode"></div>
+    </div>
+  </div>
+
+  <!-- ⑤ 現有記錄查看 -->
+  <div class="card" id="existingCard" style="display:none">
+    <div class="card-title">⑤ 現有記錄（sections_manual）</div>
+    <div id="existingRecords"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  AUTH GUARD (STEP 9.2)
+// ══════════════════════════════════════════════════════
+const role = sessionStorage.getItem('role') || null;
+if (role !== 'admin') {
+  document.getElementById('accessDenied').classList.add('show');
+} else {
+  document.getElementById('app').classList.add('show');
+  init();
+}
+
+// ══════════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════════
+const SECTION_KEYS = ['listening','vocab','cloze','context','structure','reading','translation','writing'];
+const SECTION_LABELS = {
+  listening:'聽力', vocab:'詞彙', cloze:'克漏字', context:'文意選填',
+  structure:'篇章結構', reading:'閱讀', translation:'翻譯', writing:'作文'
+};
+const SECTION_MAX = {}; // filled from sections_meta.json
+
+let allStudents = [];
+let currentSid  = null;
+let generatedPayload = null; // last built record for download
+
+// ══════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════
+async function init() {
+  // Default date to today
+  document.getElementById('examDate').value = new Date().toISOString().split('T')[0];
+
+  // Load students.json
+  try {
+    const r = await fetch('./data/students.json?v=' + Date.now());
+    if (r.ok) {
+      const d = await r.json();
+      allStudents = (d.students || []).sort((a,b) => a.seat - b.seat);
+    }
+  } catch(e) { console.warn('students.json failed:', e); }
+
+  // Load sections_meta.json for max scores display
+  try {
+    const r = await fetch('./data/sections_meta.json?v=' + Date.now());
+    if (r.ok) {
+      const d = await r.json();
+      Object.assign(SECTION_MAX, d.english || {});
+    }
+  } catch(e) { console.warn('sections_meta.json failed:', e); }
+
+  populateStudentSelect();
+  buildScoreFields();
+}
+
+function populateStudentSelect() {
+  const sel = document.getElementById('stuSelect');
+  allStudents.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `${String(s.seat).padStart(2,'0')} 號　${s.name}`;
+    sel.appendChild(opt);
+  });
+}
+
+function buildScoreFields() {
+  const grid = document.getElementById('scoresGrid');
+  grid.innerHTML = '';
+  SECTION_KEYS.forEach(k => {
+    const max = SECTION_MAX[k] ? `/ ${SECTION_MAX[k]}` : '';
+    const div = document.createElement('div');
+    div.className = 'score-field';
+    div.innerHTML = `
+      <div class="field-label">${SECTION_LABELS[k] || k}</div>
+      <input type="number" id="score_${k}" min="0" max="${SECTION_MAX[k]||999}"
+             placeholder="—" step="1">
+      <div class="score-max">${SECTION_MAX[k] ? `滿分 ${SECTION_MAX[k]}` : ''}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  STUDENT SELECTION
+// ══════════════════════════════════════════════════════
+async function onStuChange() {
+  const sid = document.getElementById('stuSelect').value;
+  currentSid = sid || null;
+
+  const infoEl = document.getElementById('stuInfo');
+  if (!sid) { infoEl.textContent = ''; hideExisting(); return; }
+
+  const stu = allStudents.find(s => s.id === sid);
+  infoEl.textContent = stu ? `ID: ${stu.id}  ·  班級: ${stu.class || '—'}` : '';
+
+  // Auto-fill exam name with sid
+  document.getElementById('examName').value = `teacher_input_${sid}`;
+
+  // Try to load existing sections_manual file
+  await loadExistingRecords(sid);
+}
+
+async function loadExistingRecords(sid) {
+  const card = document.getElementById('existingCard');
+  const wrap = document.getElementById('existingRecords');
+  try {
+    const r = await fetch(`./data/sections_manual/${sid}.json?v=${Date.now()}`);
+    if (!r.ok) { hideExisting(); return; }
+    const data = await r.json();
+    const records = data.records || [];
+    if (!records.length) { hideExisting(); return; }
+
+    card.style.display = 'block';
+    const rows = records.map((rec, i) => {
+      const isLatest = i === records.length - 1;
+      const secs = rec.sections || {};
+      const secStr = Object.entries(secs)
+        .filter(([,v]) => v !== null && v !== undefined)
+        .map(([k,v]) => `${SECTION_LABELS[k]||k}:${v}`)
+        .join('  ');
+      return `<tr>
+        <td style="font-family:var(--mono);font-size:10px;color:var(--muted)">${rec.date||'—'}</td>
+        <td style="font-size:11px;color:var(--text)">${secStr || '(無資料)'}</td>
+        <td>${isLatest ? '<span class="tag-latest">最新</span>' : ''}</td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <table class="records-table">
+        <thead><tr><th>日期</th><th>題型得分</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="margin-top:8px;font-family:var(--mono);font-size:9px;color:var(--xs)">
+        共 ${records.length} 筆記錄 · 系統只讀取最新一筆（records.at(-1)）
+      </div>`;
+  } catch(e) { hideExisting(); }
+}
+function hideExisting() {
+  document.getElementById('existingCard').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════
+//  BUILD RECORD (STEP 9.3)
+// ══════════════════════════════════════════════════════
+function buildSections() {
+  // STEP 9.3: skip null / empty / NaN
+  const sections = {};
+  let anyValid = false;
+  for (const k of SECTION_KEYS) {
+    const el  = document.getElementById(`score_${k}`);
+    const raw = el?.value.trim();
+    if (!raw || raw === '') continue;
+    const num = Number(raw);
+    if (isNaN(num)) continue;
+    sections[k] = num;
+    anyValid = true;
+  }
+  return anyValid ? sections : null;
+}
+
+function buildNewRecord() {
+  const sections = buildSections();
+  if (!sections) return null;
+  return {
+    date:      document.getElementById('examDate').value.trim() || new Date().toISOString().split('T')[0],
+    exam_name: document.getElementById('examName').value.trim() || 'teacher_input',
+    source:    'teacher_input',
+    sections,
+  };
+}
+
+// ── Fetch existing records + append new one ──────────
+async function fetchAndAppend(sid, newRecord) {
+  let existing = { sid, records: [] };
+  try {
+    const r = await fetch(`./data/sections_manual/${sid}.json?v=${Date.now()}`);
+    if (r.ok) existing = await r.json();
+    if (!Array.isArray(existing.records)) existing.records = [];
+  } catch(e) { /* file doesn't exist yet — start fresh */ }
+
+  existing.sid = sid;
+  existing.records.push(newRecord);
+  return existing;
+}
+
+// ══════════════════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════════════════
+async function generateRecord() {
+  if (!currentSid) { setStatus('error', '請先選擇學生'); return; }
+  const newRec = buildNewRecord();
+  if (!newRec)    { setStatus('error', '請至少輸入一個題型得分'); return; }
+
+  setStatus('info', '組合資料中…');
+  try {
+    const payload = await fetchAndAppend(currentSid, newRec);
+    generatedPayload = payload;
+    downloadJSON();
+    document.getElementById('dlStrip').classList.add('show');
+    setStatus('ok', `✓ JSON 已產生並下載`);
+    alert(`JSON 已產生！請將檔案放入 GitHub Repo 的 data/sections_manual/ 資料夾並執行 Push。\n更新完成後，請「重新整理」dashboard 或 sandbox 頁面才能看到最新結果。`);
+    // Refresh existing records view
+    await loadExistingRecords(currentSid);
+  } catch(e) {
+    setStatus('error', '產生失敗：' + e.message);
+  }
+}
+
+function previewRecord() {
+  if (!currentSid) { setStatus('error', '請先選擇學生'); return; }
+  const newRec = buildNewRecord();
+  if (!newRec)    { setStatus('error', '請至少輸入一個題型得分'); return; }
+
+  // Build preview (with placeholder for existing records)
+  const preview = {
+    sid: currentSid,
+    records: ['...（現有記錄保留）', newRec]
+  };
+  const panel = document.getElementById('previewPanel');
+  document.getElementById('previewCode').textContent = JSON.stringify(preview, null, 2);
+  panel.classList.add('show');
+  setStatus('info', '預覽如上，確認後按「產生 JSON 並下載」');
+}
+
+function downloadJSON() {
+  if (!generatedPayload || !currentSid) return;
+  const blob = new Blob([JSON.stringify(generatedPayload, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${currentSid}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function setStatus(type, msg) {
+  const bar = document.getElementById('statusBar');
+  const el  = document.getElementById('statusMsg');
+  bar.className = `status-bar status-${type}`;
+  el.textContent = msg;
+}
+</script>
+</body>
+</html>
